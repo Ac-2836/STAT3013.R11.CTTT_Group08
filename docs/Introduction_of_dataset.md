@@ -109,7 +109,7 @@ Nhờ vào tính chất tải biến thiên ngẫu nhiên và việc có các m�
   * Các mức C-rate cao ($19\text{A}$) vs C-rate trung bình ($9.3\text{A}$).
   * Pin nguyên bản vs Pin tái vận hành (Recommissioned) / Pin vòng đời 2 (Second-life).
 
-### 3.2. Rút trích đặc trưng y tế (Health Indicator Extraction)
+### 3.2. Rút trích chỉ số sức khỏe pin (Health Indicator Extraction)
 * Tính toán dung lượng thực tế $C_k$ tại từng chu kỳ chuẩn để thiết lập Ground-truth $\text{SOH}_k$:
   $$\text{SOH}_k = \frac{C_k}{C_{\text{nominal}}} \times 100\%$$
 * Rút trích các đặc trưng gián tiếp từ đường cong sạc/xả thông thường:
