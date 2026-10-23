@@ -18,7 +18,7 @@
 |---|---|
 | Tên | NASA Ames Prognostics Center of Excellence (PCoE), *Battery Data Set* |
 | Trích dẫn | B. Saha and K. Goebel (2007). "Battery Data Set", NASA Prognostics Data Repository, NASA Ames Research Center, Moffett Field, CA |
-| Nguồn | https://phm-datasets.s3.amazonaws.com/NASA/5.+Battery+Data+Set.zip |
+| Nguồn | https://www.kaggle.com/datasets/ckskaggle/li-ion-battery-dataset-from-nasa-pcoe |
 | Đối tượng | 34 cell Li-ion thương mại dạng 18650, dung lượng danh định **2,0 Ah** |
 | Thời gian thí nghiệm | 02/04/2008 đến 30/09/2010 (đọc từ timestamp trong file) |
 | Số nhóm thí nghiệm | 9 nhóm (G1–G9), mỗi nhóm 3–4 cell chạy song song |
