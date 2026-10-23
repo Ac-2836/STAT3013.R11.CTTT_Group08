@@ -86,7 +86,7 @@ Toàn bộ đồ án đi theo mạch dưới đây. Mạch này cũng khớp v�
 
 **0.3 Cấu trúc thư mục thống nhất:**
 ```
-data/nasa_pcoe/        dữ liệu gốc .mat (KHÔNG commit, ~230 MB)
+data/raw/              dữ liệu gốc .mat (KHÔNG commit, ~230 MB)
 data/processed/        CSV sinh ra từ pipeline (KHÔNG commit, chạy lại được)
 src/                   pipeline dùng chung: build, clean, eda
 notebooks/             01_descriptive.ipynb, 02_inferential.ipynb, 10_regression.ipynb,
@@ -131,7 +131,7 @@ docs/                  tài liệu dự án
 
 ### 1.3 Parse và gộp dữ liệu (Chap 1, tr. 15–16)
 ```bash
-python src/build_dataset.py      # data/nasa_pcoe/*.mat  ->  data/processed/*_ops.csv, cycles.csv
+python src/build_dataset.py      # data/raw/*.mat  ->  data/processed/*_ops.csv, cycles.csv
 ```
 - **Format transformation:** datevec chuyển sang datetime, số phức chuyển sang số thực.
 - **Aggregation:** hàng trăm điểm đo mỗi lần xả được gộp thành một dòng gồm `capacity_int_Ah`, `T_max_C`, `V_min`, `I_load_mean_A`, `energy_Wh`, …
@@ -583,7 +583,7 @@ Phân công chi tiết theo chương nằm ở [WBS.md](WBS.md). Phần dưới 
 - Có thể làm thêm một app Streamlit nhỏ: chọn pin, xem SOH thực tế, SOH dự báo và cảnh báo.
 
 ### 9.5 GitHub
-- README có phần chạy lại từ đầu: `pip install -r requirements.txt`, tải dataset vào `data/nasa_pcoe/`, chạy 3 script và các notebook theo thứ tự số.
+- README có phần chạy lại từ đầu: `pip install -r requirements.txt`, tải dataset vào `data/raw/`, chạy 3 script và các notebook theo thứ tự số.
 - Không commit dữ liệu.
 - Đổi tên repo theo quy ước `STAT3013.QXX_GroupYY`.
 
