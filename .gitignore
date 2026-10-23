@@ -1,8 +1,9 @@
-# Local data is never committed; only the empty folder skeleton is kept
+# Local data is never committed; only the empty folder skeleton and the raw-data README are kept
 data/*
 !data/raw/
 !data/processed/
 data/raw/*
 data/processed/*
 !data/raw/.gitkeep
+!data/raw/README.md
 !data/processed/.gitkeep
