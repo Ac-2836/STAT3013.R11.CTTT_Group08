@@ -1,408 +1,636 @@
-# KẾ HOẠCH TRIỂN KHAI ĐỒ ÁN MÔN PHÂN TÍCH THỐNG KÊ (STAT3013)
-## Đề tài: Statistical and Machine Learning-Based Modeling of Lithium-Ion Battery Degradation and State-Of-Health Prognostics under Variable Operating Conditions
-**Nhóm thực hiện:** 4AnhTai (4 thành viên)  
-**Mục tiêu:** Tối đa hóa điểm số đồ án (Target: Điểm A / 9.5 - 10.0), thỏa mãn và vượt kỳ vọng toàn bộ chuẩn đầu ra học thuật của môn học.
+# Go.md: Mô phỏng triển khai đồ án STAT3013 từng bước
+
+> **Đề tài:** Statistical and Machine Learning-Based Modeling of Lithium-Ion Battery Degradation and State-of-Health Prognostics under Variable Operating Conditions
+> **Dataset:** NASA PCoE Li-ion Battery Aging Dataset. Xem [Introduction_of_dataset.md](Introduction_of_dataset.md).
+> **Phân công chi tiết:** [WBS.md](WBS.md)
+> **Nhóm 4AnhTai:**
+
+| Thành viên | Vai trò |
+|---|---|
+| Khải Hưng | Leader, phụ trách Deep Learning |
+| Quốc Đạt | Mô hình thống kê truyền thống: hồi quy bội (cùng với logistic và SEM) |
+| Tiến Hưng | Thống kê truyền thống: thống kê suy diễn và ARIMA/ARIMAX |
+| Minh Vũ | Machine Learning |
+
+> **Thời gian:** môn học kéo dài 07/09–28/11/2026. Tài liệu được lập ngày 23/10/2026, khi đã học tới Chap 6. Chap 7 (SEM) chưa học.
 
 ---
 
-## I. TỔNG QUAN ĐỀ TÀI & CHIẾN LƯỢC TỐI ĐA ĐIỂM (RUBRIC ALIGNMENT)
+## 0. Cách đọc tài liệu này
 
-### 1. Thông tin tổng quan
-* **Môn học:** Phân tích Thống kê (Statistical Analytics) - Mã môn: `STAT3013`.
-* **Dataset sử dụng:** Kết hợp 2 bộ dữ liệu thực nghiệm chuẩn quốc tế từ NASA Ames Research Center và PML-UCF:
-  1. *NASA Room Temperature Random Walk (RW) Dataset (2014):* 4 cell pin 18650 vận hành dưới chế độ dòng ngẫu nhiên phân bố đều (-4.5A đến +4.5A) và chu kỳ kiểm chuẩn SOH định kỳ.
-  2. *Accelerated Life Testing (ALT) Dataset (2023):* 27+ khối pin (battery packs) phân loại theo 3 nhóm: Tải không đổi (Constant), Tải biến thiên ngẫu nhiên (Variable), Đổi nhiệm vụ (Recommissioned), và Tái sử dụng (Second-life).
-* **Định hướng nghiên cứu cốt lõi:** Áp dụng toàn diện các công cụ phân tích từ **Thống kê mô tả (Descriptive)** $\to$ **Thống kê suy diễn (Inferential / Hypothesis Testing)** $\to$ **Mô hình chuỗi thời gian & Hồi quy (Time Series / Regression)** $\to$ **Học máy / Học sâu (Machine Learning / Deep Learning)** để mô hình hóa quy luật suy thoái, ước lượng trạng thái sức khỏe (State-of-Health - SOH) và dự báo tuổi thọ còn lại (Remaining Useful Life - RUL) của pin Li-ion dưới tải trọng động thực tế.
+Mỗi bước được viết theo cùng một khuôn:
 
-### 2. Các sản phẩm đầu ra bắt buộc (Deliverables Checklist)
-Theo quy định của giảng viên trong khung đồ án STAT3013:
-1. **01 Báo cáo đầy đủ (Full Report):** Dung lượng $\approx 30$ trang, cấu trúc học thuật chuẩn 8 chương (Introduction, Literature Review, Methodology, Implementation & Experiments, Results & Discussion, Conclusion & Recommendations, References, Appendix).
-2. **01 Bài báo khoa học chuẩn IEEE (IEEE Conference Paper):** Dung lượng $7 - 10$ trang, định dạng 2 cột theo IEEE Template, trình bày súc tích, chuyên sâu như một công trình nghiên cứu hội nghị.
-3. **Mã nguồn GitHub (GitHub Repository):** Tên repo chuẩn quy ước `STAT3013.QXX_GroupYY`, code sạch, module hóa, có notebook chạy thực nghiệm có chú thích và tài liệu README hướng dẫn reproduce 100%.
-4. **Slide thuyết trình (Presentation Deck):** Slide báo cáo bảo vệ đồ án chuyên nghiệp, trực quan, cô đọng số liệu thống kê và biểu đồ kết quả.
-5. **Video Demo (Demo Video):** Video ghi hình tóm tắt quy trình dự án, pipeline xử lý dữ liệu và demo chạy mô hình / dashboard trực quan hóa.
-6. **Bằng chứng kiểm tra đạo văn (Plagiarism Report):** Ảnh chụp kết quả Turnitin $\le 10\%$.
-7. **Bằng chứng kiểm tra nội dung do AI tạo (AI-Generation Audit):** Báo cáo kiểm định và giải trình tỷ lệ sử dụng công cụ hỗ trợ AI (Grammarly/Quillbot/ZeroGPT).
+| Mục | Ý nghĩa |
+|---|---|
+| **Ai** | Người chịu trách nhiệm chính (R) và người review chéo (Rv) |
+| **Input** | Cần có gì trước khi làm (file, bảng, kết quả của bước trước) |
+| **Làm thế nào** | Thao tác cụ thể, kèm code mẫu khi cần |
+| **Vì sao** | Căn cứ: slide của thầy (chương, trang), yêu cầu đồ án, hoặc phát hiện từ dữ liệu |
+| **Output** | File, bảng hoặc hình tạo ra, và nơi lưu |
+| **Xong khi** | Tiêu chí để coi bước đó là hoàn thành (Definition of Done) |
 
-### 3. Chiến lược đạt điểm tối đa (Grade Maximization Strategy)
-* **Tính chặt chẽ về mặt phương pháp luận:** Không chỉ áp dụng máy móc các thuật toán ML/DL, mà phải làm nổi bật nền tảng thống kê (kiểm định phân phối, kiểm tra giả định mô hình, kiểm định phương sai, khoảng tin cậy 95%, định lượng độ bất định - Uncertainty Quantification).
-* **Ánh xạ vào bài toán kinh tế - kỹ thuật (Business & Operational Insights):** Giải thích rõ ràng ý nghĩa của SOH/RUL đối với bài toán kinh tế vận hành đội xe điện (EV Fleet Management), trạm lưu trữ năng lượng tái tạo (BESS), chiến lược bảo trì dự đoán (Predictive Maintenance) và thị trường tái sử dụng pin thứ cấp (Second-life Battery Market).
-* **Tính minh bạch và khả năng tái lập (Reproducibility):** Cung cấp pipeline tự động hóa hoàn toàn từ tiền xử lý, rút trích feature, huấn luyện đến đánh giá.
-* **100% thành viên nắm vững toàn bộ dự án:** Phân công theo ma trận RACI, mỗi thành viên phụ trách chính một mảng nhưng tham gia chéo và tổng duyệt (Mock Defense) để phản biện trôi chảy trước hội đồng.
-
-### 4. Hệ thống 4 Thuật toán Trọng tâm Chuẩn SOTA (2 Statistical, 1 ML, 1 DL)
-Để đảm bảo đề tài đạt điểm tối đa (chuẩn nghiên cứu công bố IEEE), đồ án loại bỏ các mô hình cơ bản lỗi thời và triển khai **hệ thống 4 thuật toán hiện đại bậc nhất**, được chọn lọc chuyên biệt để giải quyết các đặc tính phức tạp của bộ dữ liệu Pin Li-ion dưới tải ngẫu nhiên (phi tuyến tính, phục hồi dung lượng, nhiễu động học và biến định danh đa phân nhóm):
-
-| STT | Phân nhóm | Tên Thuật toán Chuẩn SOTA | Vai trò trong Đồ án | Lý do lựa chọn & Tính tương thích với Dataset |
-| :---: | :--- | :--- | :--- | :--- |
-| **1** | **Statistical 1** | **Gaussian Process Regression (GPR)** với Hạt nhân Tổ hợp (*Composite Covariance Kernel: Matérn 5/2 + RQ + White Noise*) | Ước lượng SOH và dự báo suy thoái dung lượng kèm **Định lượng Độ bất định (Uncertainty Quantification)** | Là chuẩn mực vàng (Gold Standard) trong thống kê Bayes cho bài toán suy thoái pin. Cho phép xuất ra phân phối xác suất đầy đủ: giá trị kỳ vọng $\mu(x_*)$ và khoảng tin cậy 95% ($\pm 1.96\sigma$), bắt trọn hiện tượng phục hồi dung lượng (capacity regeneration) và lọc nhiễu cảm biến. |
-| **2** | **Statistical 2** | **Bayesian Structural Time Series (BSTS)** (Chuỗi thời gian Cấu trúc Bayes qua State-Space & MCMC) | Dự báo xu hướng chuỗi thời gian suy thoái dung lượng tích hợp các biến ngoại sinh động (Dynamic Exogenous Regressors) | Hiện đại vượt trội so với ARIMA truyền thống: Cho phép phân rã chuỗi thời gian thành Xu hướng phi tuyến (Trend), Chu kỳ đo kiểm chuẩn (Cycle), và tác động từ các biến tải trọng ngẫu nhiên (Current, Temperature) thông qua lọc Kalman và lấy mẫu MCMC Gibbs Sampling. |
-| **3** | **Machine Learning** | **CatBoost Regressor** (Categorical Gradient Boosting) | Hồi quy SOH thời gian thực từ tập đặc trưng sức khỏe gián tiếp (Health Indicators - HIs) | Thuật toán GBDT SOTA cho dữ liệu bảng/cảm biến: Cơ chế **Ordered Boosting** chống Overfitting và thuật toán xử lý biến phân nhóm độc quyền xử lý hoàn hảo dữ liệu ALT (phân biệt các nhóm pin `Constant`, `Variable`, `Recommissioned`, `Second-life`) mà không bị rò rỉ dữ liệu (Target Leakage). |
-| **4** | **Deep Learning** | **Time Series Transformer Encoder (Transformer thuần cho chuỗi thời gian)** | Dự báo Tuổi thọ Còn lại (Remaining Useful Life - RUL) từ chuỗi đặc trưng vận hành đa chiều | Kiến trúc Transformer Encoder chuẩn mực (chuẩn bài báo kinh điển *Attention Is All You Need*): Sử dụng cơ chế Multi-Head Self-Attention để tự động học mối tương quan toàn cục giữa các chu kỳ sạc/xả trong quá khứ và bắt trúng "knee-point" (điểm gãy suy thoái). Cấu trúc trong sáng, thanh lịch, dễ code và cực kỳ thuận lợi khi bảo vệ đồ án. |
+Ký hiệu trạng thái: ✅ đã xong · 🔄 đang làm · ⏳ chưa bắt đầu.
 
 ---
 
-## II. LỘ TRÌNH TRIỂN KHAI CHI TIẾT (8 GIAI ĐOẠN TỪ ĐẦU ĐẾN CUỐI)
+## 1. Bức tranh tổng thể
 
-```mermaid
-flowchart TD
-    G1[Giai đoạn 1: Chuẩn bị Môi trường & Quản trị Dữ liệu] --> G2[Giai đoạn 2: Thống kê Mô tả & Khám phá Dữ liệu - EDA]
-    G2 --> G3[Giai đoạn 3: Thống kê Suy diễn & Kiểm định Giả thuyết]
-    G3 --> G4[Giai đoạn 4: Kỹ nghệ Chỉ số Sức khỏe Pin - Health Indicators & Nhãn Chuẩn SOH]
-    G4 --> G5[Giai đoạn 5: Mô hình hóa Thống kê, Chuỗi thời gian & Học máy]
-    G5 --> G6[Giai đoạn 6: Diễn giải Mô hình & Đóng góp Ứng dụng Thực tiễn]
-    G6 --> G7[Giai đoạn 7: Hoàn thiện Toàn bộ Bộ Sản phẩm Đầu ra]
-    G7 --> G8[Giai đoạn 8: Tổng duyệt & Chuẩn bị Bảo vệ Đồ án]
+### 1.1 Khung 4 loại analytics (Chap 1, tr. 8–10)
+Toàn bộ đồ án đi theo mạch dưới đây. Mạch này cũng khớp với thứ tự "Descriptive → Inferential → Regression → SEM → Forecasting → ML" ở mục 5 của đề cương.
+
+| Tầng | Câu hỏi | Phương pháp | Chương |
+|---|---|---|---|
+| Descriptive | Pin suy giảm như thế nào dưới từng điều kiện? | Thống kê mô tả, histogram, boxplot, đường SOH | Chap 1 |
+| Diagnostic | Yếu tố nào làm suy giảm nhanh hơn, và nhanh hơn bao nhiêu? | t-test, F-test, Levene, ANOVA, Tukey, chi-square, hồi quy, SEM | Chap 2, 3, 7 |
+| Predictive | SOH ở các chu kỳ tới là bao nhiêu? Khi nào chạm EOL? | Logistic, ARIMA/ARIMAX, SVR/RF, LSTM/GRU | Chap 4, 5, 6 |
+| Prescriptive | Doanh nghiệp và người dùng nên làm gì? | Chuyển kết quả thành khuyến nghị | Discussion |
+
+### 1.2 Câu hỏi nghiên cứu (Research Questions)
+
+| RQ | Câu hỏi | Phương pháp | Người phụ trách |
+|---|---|---|---|
+| RQ1 | Tốc độ suy giảm SOH có khác nhau có ý nghĩa thống kê giữa các mức nhiệt độ, dòng xả và profile xả không? | Chap 2 | Cả nhóm (lead: Tiến Hưng) |
+| RQ2 | Mỗi yếu tố làm SOH thay đổi bao nhiêu % sau mỗi chu kỳ? | Hồi quy bội log-linear (Chap 3) | Quốc Đạt |
+| RQ3 | Dự báo được dung lượng ngắn hạn tốt đến đâu chỉ từ lịch sử của chính pin đó? Thêm biến ngoại sinh có giúp không? | ARIMA/ARIMAX (Chap 5) | Tiến Hưng |
+| RQ4 | Mô hình ML với đặc trưng sạc và trở kháng dự báo SOH chu kỳ kế tiếp tốt đến đâu? Đặc trưng nào quan trọng nhất? | SVR/RF (Chap 6) | Minh Vũ |
+| RQ5 | Mô hình DL trên chuỗi đặc trưng có hơn ML trên dữ liệu nhỏ không? | LSTM/GRU (Chap 6) | Khải Hưng |
+| RQ6 | Có phải điều kiện vận hành tác động lên SOH thông qua trở kháng không? | SEM / path analysis (Chap 7) | Quốc Đạt và Tiến Hưng |
+
+### 1.3 Lịch tổng
+
+| Giai đoạn | Nội dung | Thời gian | Người phụ trách chính | Trạng thái |
+|---|---|---|---|---|
+| GĐ0 | Chốt đề tài, setup repo và môi trường | trước 23/10 | Khải Hưng | ✅ |
+| GĐ1 | Hiểu dữ liệu, pipeline parse và làm sạch | 23/10–27/10 | Khải Hưng (cả nhóm review) | ✅ pipeline, 🔄 review |
+| GĐ2 | Thống kê mô tả | 26/10–29/10 | Cả nhóm (lead: Minh Vũ) | ⏳ |
+| GĐ3 | Thống kê suy diễn | 29/10–02/11 | Cả nhóm (lead: Tiến Hưng) | ⏳ |
+| GĐ4 | Chốt giao thức mô hình chung (split, metric, baseline) | 02/11–03/11 | Khải Hưng | ⏳ |
+| GĐ5 | Modeling song song, 4 thuật toán | 03/11–15/11 | Mỗi người một mô hình | ⏳ |
+| GĐ6 | SEM (sau khi học Chap 7) | 16/11–19/11 | Quốc Đạt, Tiến Hưng | ⏳ |
+| GĐ7 | So sánh mô hình và tổng hợp kết quả | 16/11–18/11 | Khải Hưng | ⏳ |
+| GĐ8 | Insight và khuyến nghị kinh doanh | 18/11–20/11 | Khải Hưng (cả nhóm góp) | ⏳ |
+| GĐ9 | Viết các deliverable | 26/10–25/11 (Literature Review làm từ sớm) | Xem WBS | ⏳ |
+| GĐ10 | Kiểm tra đạo văn và AI, tập dượt, nộp bài | 24/11–28/11 | Cả nhóm | ⏳ |
+
+> Hạn nộp chính xác phải xem trên Moodle. Thầy chỉ nhận bài qua Moodle, không nhận qua Zalo hay email (Chap 0, tr. 5).
+
+---
+
+## GĐ0. Chốt đề tài và setup ✅
+
+**0.1 Đề tài:** thầy đã duyệt hướng *"chuyển thành bài toán nghiên cứu để rút ra insight về tuổi thọ pin cho doanh nghiệp"*.
+
+**0.2 Repo:**
+- Repo hiện tại: `Ac-2836/4AnhTai---Statistical-Analytics-`.
+- ⚠ Trước khi nộp phải đổi tên theo đúng quy ước `STAT3013.QXX_GroupYY` (Phần C của đề cương). Leader làm việc này, dùng mục Settings của GitHub.
+
+**0.3 Cấu trúc thư mục thống nhất:**
+```
+data/nasa_pcoe/        dữ liệu gốc .mat (KHÔNG commit, ~230 MB)
+data/processed/        CSV sinh ra từ pipeline (KHÔNG commit, chạy lại được)
+src/                   pipeline dùng chung: build, clean, eda
+notebooks/             01_descriptive.ipynb, 02_inferential.ipynb, 10_regression.ipynb,
+                       20_arima.ipynb, 30_ml.ipynb, 40_dl.ipynb, 50_sem.ipynb, 60_compare.ipynb
+reports/figures/       hình dùng trong báo cáo (commit)
+reports/predictions/   dự báo của từng mô hình theo một định dạng chung (xem GĐ4)
+docs/                  tài liệu dự án
 ```
 
----
-
-### GIAI ĐOẠN 1: CHUẨN BỊ MÔI TRƯỜNG, QUẢN TRỊ DỰ ÁN & TIỀN XỬ LÝ DỮ LIỆU THÔ
-> **Mục tiêu:** Xây dựng cơ sở hạ tầng kỹ thuật chuẩn mực, chuyển đổi dữ liệu thô (.mat, .Rda, .csv) thành định dạng chuẩn tốc độ cao (Parquet), phân định rõ vai trò nhóm.
-
-#### Bước 1.1: Khởi tạo Repository và Cấu trúc Thư mục Chuẩn
-* Thiết lập cấu trúc repo theo chuẩn dự án Data Science chuyên nghiệp:
-  ```text
-  STAT3013.QXX_GroupYY/
-  ├── data/
-  │   ├── raw/                 # Dữ liệu gốc (.mat, .Rda, .csv)
-  │   └── processed/           # Dữ liệu đã làm sạch & parquet hóa
-  ├── notebooks/               # Jupyter Notebooks theo từng giai đoạn
-  │   ├── 01_data_ingestion.ipynb
-  │   ├── 02_eda_descriptive.ipynb
-  │   ├── 03_inferential_stats.ipynb
-  │   ├── 04_feature_engineering.ipynb
-  │   └── 05_modeling_evaluation.ipynb
-  ├── src/                     # Source code module hóa (Python package)
-  │   ├── data_loader.py
-  │   ├── stats_tests.py
-  │   ├── feature_extraction.py
-  │   └── models.py
-  ├── reports/                 # Bản thảo báo cáo, paper IEEE, figures
-  │   ├── figures/
-  │   ├── full_report/
-  │   └── ieee_paper/
-  ├── slides/                  # File trình chiếu và tài liệu thuyết trình
-  ├── requirements.txt         # Khai báo phiên bản thư viện cố định
-  └── README.md                # Tài liệu hướng dẫn cài đặt và tổng quan
-  ```
-* Thiết lập `.gitignore` để không push các file nhị phân quá lớn hoặc checkpoint tạm lên GitHub.
-
-#### Bước 1.2: Chuẩn hóa Môi trường Lập trình & Quản lý Thư viện
-* Tạo Virtual Environment (`venv` hoặc `conda`).
-* Khai báo và khóa phiên bản các thư viện chính: `numpy`, `pandas`, `scipy`, `statsmodels`, `scikit-learn`, `xgboost`, `lightgbm`, `torch` (hoặc `tensorflow`), `matplotlib`, `seaborn`, `shap`, `scikit-posthocs`, `pyarrow`.
-
-#### Bước 1.3: Pipeline Đọc & Chuyển đổi Dữ liệu Thô
-* **Xử lý NASA RW Dataset:** Viết script Python sử dụng thư viện `scipy.io` (đọc `.mat`) hoặc `pyreadr` (đọc `.Rda`), trích xuất cấu trúc mảng lồng nhau (`data.step`) thành DataFrame gồm các trường: `cell_id`, `step_index`, `type`, `comment`, `time`, `relativeTime`, `voltage`, `current`, `temperature`, `date`.
-* **Xử lý ALT Dataset:** Viết bộ nạp tự động quét qua 27+ file `.csv`, đồng bộ tên cột, kiểm tra kiểu dữ liệu datetime, xử lý các bản ghi lỗi hoặc bị gián đoạn tín hiệu cảm biến.
-* Lưu toàn bộ bảng dữ liệu thời gian thực đã làm sạch sang định dạng **Apache Parquet (`.parquet`)** để tối ưu hóa dung lượng lưu trữ (giảm 70-80%) và tăng tốc độ đọc I/O gấp 10-20 lần so với CSV/MAT.
-
-#### Bước 1.4: Phân công Nhiệm vụ & Thiết lập Tiến độ Nhóm
-* Thống nhất lịch họp định kỳ (weekly sync), phân công ma trận trách nhiệm RACI cho 4 thành viên.
-* Thiết lập tài liệu dùng chung trên Google Drive / Overleaf (cho bài báo IEEE LaTeX) và OneDrive.
+**0.4 Quy ước làm việc:**
+- **Python 3.11**, thư viện trong `requirements.txt`. Ai cần thư viện mới (ví dụ `scikit-learn`, `torch`, `semopy`) thì báo Leader để thêm vào file.
+- **Random seed** cố định là 42 ở mọi nơi có yếu tố ngẫu nhiên.
+- **Git:** mỗi người làm trên nhánh riêng (`feat/regression`, `feat/arima`, `feat/ml`, `feat/dl`). Merge vào `main` qua Pull Request, và cần ít nhất một người review.
+- **Notebook:** phải chạy được từ đầu đến cuối (Restart & Run All) trước khi commit. Không đọc dữ liệu bằng đường dẫn tuyệt đối trên máy cá nhân.
+- **Họp nhóm:** 2 lần mỗi tuần, khoảng 30 phút. Mỗi người trình bày lại phần của **một người khác**, vì đề cương yêu cầu "All members must understand the entire project".
 
 ---
 
-### GIAI ĐOẠN 2: THỐNG KÊ MÔ TẢ (DESCRIPTIVE ANALYTICS) & KHÁM PHÁ DỮ LIỆU (EDA)
-> **Mục tiêu:** Thấu hiểu cấu trúc, phân bố xác suất và hành vi suy thoái của pin; tạo các đồ thị xuất bản (publication-ready figures) cho báo cáo.
+## GĐ1. Hiểu và chuẩn bị dữ liệu ✅ (pipeline) · 🔄 (review)
 
-#### Bước 2.1: Phân tích Thống kê Phân phối Tham số Vận hành
-* Tính toán bảng thống kê tóm tắt 5 số (Five-number summary) kết hợp các đại lượng đo lường hình dáng phân phối cho từng biến: Điện áp ($V$), Dòng điện ($I$), Nhiệt độ ($T$), Thời gian chu kỳ ($t$):
-  * Số đo xu hướng tập trung: Mean, Median, Trimmed Mean.
-  * Số đo độ phân tán: Standard Deviation, Variance, Interquartile Range (IQR).
-  * Số đo hình dạng phân phối: Hệ số bất đối xứng (Skewness - $G_1$), Hệ số độ nhọn (Kurtosis - $G_2$).
-* Trực quan hóa phân phối: Sử dụng đồ thị kết hợp Histogram + Kernel Density Estimation (KDE), Boxplot đa lớp và Violin plot để so sánh giữa các cell pin và các nhóm điều kiện vận hành.
+> Chi tiết đầy đủ ở [Introduction_of_dataset.md](Introduction_of_dataset.md). Mục này mô tả lại **quá trình** đã làm và việc mỗi người cần kiểm tra lại.
 
-#### Bước 2.2: Phân tích Động lực học Tải trọng (Dynamic Loading Analysis)
-* Đối với NASA RW: Trực quan hóa chuỗi thời gian ngẫu nhiên của 12 mức dòng điện (từ -4.5A đến +4.5A), kiểm tra tính ngẫu nhiên đều (uniform distribution) của dòng điện nạp/xả qua đồ thị Empirical CDF.
-* Đối với ALT Dataset: So sánh biên độ dòng xả giữa nhóm tải tĩnh ($9.3\text{A}, 12.9\text{A}, 14.3\text{A}, 16.0\text{A}, 19.0\text{A}$) và nhóm tải động biến thiên (đổi xung 40s/60s/80s).
-* Phân tích ứng suất nhiệt (Thermal Stress): Đánh giá biến thiên nhiệt độ bề mặt pin và nhiệt độ MOSFET/resistor trên mạch tải, xác định các thời điểm quá nhiệt cực đại.
+### 1.1 Đọc tài liệu gốc và lập bảng manifest
+- **Ai:** Khải Hưng (R), cả nhóm (Rv).
+- **Làm thế nào:** đọc 9 file `README_*.txt` và `metadata.csv`, sau đó đối chiếu với giá trị **đo được** trong từng chu kỳ: nhiệt độ môi trường và dòng xả trung bình.
+- **Vì sao:** metadata có thể sai, và thực tế đã sai ở 3 chỗ:
+  - B0028 xả với biên độ 2 A, không phải 4 A.
+  - G6 có 3 pha, với 22°C ở pha đầu.
+  - G5 có 4 pha.
+- **Output:** Mục 2 của Introduction_of_dataset.md.
 
-#### Bước 2.3: Xây dựng Quỹ đạo Suy thoái Dung lượng Thực nghiệm (Empirical Degradation Trajectories)
-* Lọc ra tất cả các chu kỳ đo chuẩn:
-  * NASA RW: Lọc các bước có comment `"reference discharge"` hoặc `"reference charge"`.
-  * ALT Dataset: Lọc các chu kỳ có nhãn `mission_type == 0` (Reference discharge với dòng cố định 2.5A).
-* Vẽ biểu đồ suy giảm dung lượng thực tế $C_k$ theo số chu kỳ (Cycle Index) và theo thời gian tích lũy (Cumulative Operating Hours).
-* Xác định mốc suy giảm chạm ngưỡng hỏng quy ước: 80% dung lượng danh định (End-of-Life - EOL) và 70% (First-life retirement).
+### 1.2 Phân loại dữ liệu (Chap 1, tr. 13–14, 22–32)
 
-#### Bước 2.4: Phân tích Tương quan & Ma trận Tương quan (Correlation Analysis)
-* Tính toán ma trận tương quan Pearson (tương quan tuyến tính) và Spearman / Kendall Tau (tương quan phi tuyến đơn điệu) giữa:
-  * Tổng năng lượng nạp/xả tích lũy ($\int V \cdot I \, dt$).
-  * Lượng điện tích thông qua tổng cộng (Ampere-hour Throughput).
-  * Nhiệt độ trung bình / Nhiệt độ tích lũy vượt ngưỡng.
-  * Tốc độ suy thoái dung lượng ($\Delta C / \Delta \text{Cycle}$).
-* Thể hiện bằng ma trận nhiệt (Correlation Heatmap) có chú thích giá trị hệ số tương quan $r$ và mức ý nghĩa thống kê ($p$-value).
+| Câu hỏi | Kết luận |
+|---|---|
+| Dữ liệu thuộc loại cấu trúc nào? | Semi-structured (struct MATLAB lồng nhau), phải làm phẳng thành bảng |
+| Dạng dữ liệu theo thời gian? | **Panel data**: 34 pin × chuỗi chu kỳ |
+| Nhiệt độ thuộc thang đo nào? | Interval. Được tính mean/SD, nhưng không so sánh theo tỉ lệ. |
+| Dung lượng, dòng điện, trở kháng thuộc thang đo nào? | Ratio, liên tục |
+| Chỉ số chu kỳ? | Ratio, rời rạc |
+| Mã pin, mã nhóm, profile? | Nominal |
 
----
+### 1.3 Parse và gộp dữ liệu (Chap 1, tr. 15–16)
+```bash
+python src/build_dataset.py      # data/nasa_pcoe/*.mat  ->  data/processed/*_ops.csv, cycles.csv
+```
+- **Format transformation:** datevec chuyển sang datetime, số phức chuyển sang số thực.
+- **Aggregation:** hàng trăm điểm đo mỗi lần xả được gộp thành một dòng gồm `capacity_int_Ah`, `T_max_C`, `V_min`, `I_load_mean_A`, `energy_Wh`, …
+- **Integration:** mỗi lần xả được ghép với lần sạc ngay trước nó và lần EIS gần nhất **trước** nó, dùng `merge_asof` theo `op_index`.
+- **Kiểm chứng then chốt:** tích phân dòng điện tới 2,7 V khớp với cột `Capacity` gốc ở 98,5% số chu kỳ. Từ đó phát hiện F1: cột gốc là dung lượng đến 2,7 V, nên **dùng `capacity_int_Ah`**.
 
-### GIAI ĐOẠN 3: THỐNG KÊ SUY DIỄN & KIỂM ĐỊNH GIẢ THUYẾT (INFERENTIAL STATISTICS)
-> **Mục tiêu:** Đưa ra các kết luận mang tính khoa học vững chắc bằng kiểm định thống kê; đây là phần thể hiện rõ nhất năng lực chuyên môn của môn học STAT3013.
+### 1.4 Làm sạch dữ liệu (Chap 1, tr. 17; Chap 6, tr. 69–79)
+```bash
+python src/clean_dataset.py      # -> cycles_clean.csv, battery_summary.csv
+```
 
-#### Bước 3.1: Kiểm tra Giả định Tiền kiểm định (Pre-testing Assumption Checks)
-* **Kiểm định tính phân phối chuẩn (Normality Tests):** Thực hiện Shapiro-Wilk test và Kolmogorov-Smirnov test (kèm đồ thị Q-Q plot) trên tốc độ suy thoái dung lượng và mức tăng nội trở.
-* **Kiểm định tính đồng nhất phương sai (Homoscedasticity Tests):** Thực hiện Levene’s Test hoặc Bartlett’s Test để kiểm tra sự bằng nhau về phương sai giữa các nhóm thử nghiệm.
-* Căn cứ kết quả để quyết định sử dụng kiểm định tham số (Parametric) hay phi tham số (Non-parametric).
+| Quy tắc | Số dòng bị loại | Căn cứ |
+|---|---|---|
+| Loại các pin của G8 (B0049–B0052) | 100 | Crash phần mềm, dòng tải bằng 0, dung lượng vượt 2,0 Ah danh định |
+| Lần xả không có lần sạc trước | 19 | Pin chưa được sạc đầy theo quy trình |
+| Lần xả không chạm tới cutoff | 16 | Lần xả bị cắt ngang |
+| Dung lượng ngoài khoảng [0,05; 2,1] Ah | 1 | Giá trị phi vật lý |
 
-#### Bước 3.2: Kiểm định Tác động của Dạng Tải trọng (Constant vs. Variable/Random Walk)
-* **Giả thuyết nghiên cứu:** Tải trọng biến thiên ngẫu nhiên (Variable Load / Random Walk) gây suy thoái pin nhanh hơn đáng kể so với tải trọng cố định (Constant Load) ở cùng mức tiêu thụ năng lượng tương đương.
-  * $H_0: \mu_{\text{decay, variable}} = \mu_{\text{decay, constant}}$
-  * $H_1: \mu_{\text{decay, variable}} > \mu_{\text{decay, constant}}$
-* Áp dụng Two-sample Student’s t-test (nếu thỏa mãn chuẩn) hoặc Mann-Whitney U test (nếu vi phạm giả định chuẩn). Báo cáo giá trị thống kê $t$ (hoặc $U$), bậc tự do $df$, giá trị $p$-value, và khoảng tin cậy 95% cho độ chênh lệch trung bình.
+- **Kết quả:** 2.794 → **2.658** dòng hợp lệ.
+- **Gắn cờ nhưng không xóa:** `cap_outlier` (57), `break_in` (17), `long_rest` (167).
+- **Chia segment** theo (nhiệt độ, mức dòng). Chỉ tính SOH cho pin có điều kiện không đổi.
+- **Phân tầng pin:** A (12 pin), B (10), C (7), N (1), X (4).
 
-#### Bước 3.3: Phân tích Phương sai Đa nhóm (ANOVA) về Mức Tải C-rate & Ứng suất Nhiệt
-* Phân chia nhóm pin ALT theo các mức tải dòng: Nhóm 1 (9.3A), Nhóm 2 (12.9A), Nhóm 3 (14.3A), Nhóm 4 (16.0A), Nhóm 5 (19.0A).
-* Thực hiện **One-way ANOVA** (hoặc **Kruskal-Wallis H-test** nếu phi tham số) để kiểm tra xem tốc độ mất dung lượng có khác biệt giữa các mức tải xả hay không.
-* Thực hiện **Two-way ANOVA** để phân tích hiệu ứng tương tác (Interaction Effect) giữa C-rate và Mức nhiệt độ tích lũy lên tuổi thọ pin.
-* Nếu bác bỏ $H_0$ ($p < 0.05$), tiến hành **Post-hoc Test (Tukey’s HSD hoặc Dunn’s Test với hiệu chỉnh Bonferroni)** để chỉ rõ cặp mức dòng nào gây ra sự khác biệt có ý nghĩa thống kê.
+### 1.5 Isolation Forest để kiểm tra chéo outlier (Chap 6 §5): *bài tập cho Minh Vũ*
+- **Input:** `cycles_clean.csv`, chỉ lấy tier A và B.
+- **Làm thế nào:** chạy `IsolationForest(contamination='auto', random_state=42)` trên các cột (`soh`, ΔSOH so với chu kỳ trước, `T_max_C`, `V_min`, `rest_before_h`), fit riêng cho từng nhóm. Lấy điểm `score_samples` và chuyển sang thang s(x, n) như công thức trên slide tr. 78.
+- **Vì sao:** vừa đối chiếu cờ `cap_outlier` (tạo bằng quy tắc Hampel) với một phương pháp ML của môn học, vừa là nội dung "anomaly detection" để đưa vào báo cáo.
+- **Output:** bảng so khớp "Hampel và iForest cùng gắn cờ / chỉ Hampel / chỉ iForest", và một hình scatter.
+- **Xong khi:** giải thích được vì sao các điểm hồi phục sau thời gian nghỉ (F5) **không nên** bị coi là outlier.
 
-#### Bước 3.4: Kiểm định So sánh Tuổi thọ: Pin Nguyên bản vs. Pin Tái vận hành (Recommissioned) vs. Pin Vòng đời 2 (Second-life)
-* Phân tích kiểm định so sánh tỷ lệ suy thoái (Degradation Rate per Cycle) giữa 3 nhóm: Fresh, Recommissioned và Second-life.
-* Kiểm định giả thuyết về hiện tượng "knee point" (điểm gãy suy thoái nhanh bất thường) xuất hiện sớm hơn ở các cell tái sử dụng.
+### 1.6 Review dữ liệu: mỗi thành viên kiểm tra một phần
 
-#### Bước 3.5: Tính toán Kích thước Hiệu ứng (Effect Size Quantification)
-* Tính toán **Cohen's d** (cho so sánh 2 nhóm) và **Eta-squared ($\eta^2$) / Partial $\eta^2$** (cho ANOVA) để chứng minh mức độ ảnh hưởng thực tiễn của các yếu tố chứ không chỉ dựa vào $p$-value thuần túy.
+| Thành viên | Việc cần kiểm tra | Cách làm |
+|---|---|---|
+| Quốc Đạt | Định nghĩa SOH và C₀ | Mở `cycles_clean.csv`, vẽ SOH của B0033 và B0054, xem cách tính C₀ có hợp lý không |
+| Tiến Hưng | Quy tắc loại bỏ | Lấy ngẫu nhiên 5 dòng bị loại trong `cycles.csv`, kiểm tra lý do có đúng không |
+| Minh Vũ | Các cờ outlier | So sánh với Isolation Forest (bước 1.5) |
+| Khải Hưng | Join với dữ liệu sạc và EIS | Kiểm tra `chg_op_index` < `op_index` và Re/Rct không bao giờ lấy từ lần đo sau |
 
----
-
-### GIAI ĐOẠN 4: KỸ NGHỆ CHỈ SỐ SỨC KHỎE PIN (HEALTH INDICATORS) & THIẾT LẬP NHÃN CHUẨN SOH
-> **Mục tiêu:** Xây dựng ground-truth SOH chuẩn xác từ chu kỳ kiểm chuẩn và trích xuất các đặc trưng gián tiếp từ chu kỳ vận hành ngẫu nhiên phục vụ dự đoán thời gian thực.
-
-#### Bước 4.1: Tính toán Nhãn Sức khỏe Chuẩn (Ground Truth State-of-Health - SOH)
-* Áp dụng phương pháp tích phân dòng điện (Coulomb Counting) trên toàn bộ chu kỳ Reference Discharge:
-  $$C_k = \int_{0}^{t_{\text{end}}} I(t) \, dt$$
-* Chuẩn hóa về tỷ lệ phần trăm sức khỏe SOH tại chu kỳ kiểm chuẩn thứ $k$:
-  $$\text{SOH}_k = \frac{C_k}{C_{\text{nominal}}} \times 100\%$$
-* Xây dựng chuỗi Ground-truth SOH liên tục cho từng khối pin làm biến mục tiêu (Target Variable $y$).
-
-#### Bước 4.2: Kỹ nghệ Trích xuất Đặc trưng Sức khỏe Gián tiếp (Indirect Health Indicators - HIs)
-Vì trong điều kiện thực tế không thể dừng xe/dừng thiết bị để chạy chu kỳ đo chuẩn, nhóm sẽ trích xuất các đặc trưng phản chiếu trạng thái suy thoái từ chu kỳ sạc/xả thông thường:
-1. **Đặc trưng Thời gian nạp/xả trong dải điện áp cố định ($\Delta t_{V_1 \to V_2}$):** Thời gian để điện áp tăng từ ngưỡng $V_1$ lên $V_2$ (ví dụ: $3.8\text{V} \to 4.1\text{V}$) phản ánh trực tiếp sự co hẹp dung tích chứa ion Li+.
-2. **Ước lượng Nội trở thuần Ohmic ($R_{\text{int}}$):** Tính toán độ sụt áp tức thời tại thời điểm chuyển trạng thái dòng:
-   $$R_{\text{int}} \approx \frac{|\Delta V|}{|\Delta I|} = \frac{|V(t^+) - V(t^-)|}{|I(t^+) - I(t^-)|}$$
-3. **Đặc trưng Động học Vi phân (Differential Analysis):**
-   * Tốc độ biến thiên điện áp trung bình theo thời gian: $\overline{dV/dt}$.
-   * Phân tích đường cong vi phân dung lượng tích lũy (Incremental Capacity - IC: $dQ/dV$).
-4. **Đặc trưng Nhiệt - Điện năng tích lũy:**
-   * Nhiệt độ cực đại trong chu kỳ ($T_{\max}$).
-   * Năng lượng tỏa nhiệt tích lũy (tích phân chênh lệch nhiệt độ bề mặt và môi trường).
-
-#### Bước 4.3: Lọc nhiễu, Làm mượt & Đánh giá Chất lượng Đặc trưng
-* Áp dụng bộ lọc Savitzky-Golay hoặc Exponential Moving Average (EMA) để triệt tiêu nhiễu đo lường cảm biến.
-* Đánh giá chất lượng của từng đặc trưng HI bằng 3 chỉ số học thuật tiêu chuẩn trong lĩnh vực PHM:
-  * **Độ đơn điệu (Monotonicity Metric - $\text{Mon}$):** Khả năng phản ánh xu hướng suy giảm một chiều theo thời gian.
-  * **Độ tương quan (Correlation Metric - $\text{Corr}$):** Mức độ đồng biến/nghịch biến với nhãn Ground-truth SOH.
-  * **Độ bền vững (Robustness Metric - $\text{Rob}$):** Khả năng chống chịu nhiễu ngẫu nhiên của tải.
-* Chọn lọc tập đặc trưng tối ưu (Feature Selection) thông qua kiểm định độ tương quan và Recursive Feature Elimination (RFE).
+**Xong khi:** cả 4 người đồng ý với các quy tắc. Nếu có thay đổi thì Leader sửa `clean_dataset.py` và **ghi lại lý do** trong Introduction_of_dataset.md.
 
 ---
 
-### GIAI ĐOẠN 5: MÔ HÌNH HÓA THỐNG KÊ, CHUỖI THỜI GIAN & HỌC MÁY (HỆ THỐNG 4 THUẬT TOÁN SOTA)
-> **Mục tiêu:** Hiện thực hóa và so sánh khách quan hệ thống 4 thuật toán hiện đại bậc nhất (2 Phân tích Thống kê, 1 Machine Learning, 1 Deep Learning) kết hợp baseline đối chứng, đảm bảo tính vững chắc về mặt toán học và vượt trội về độ chính xác dự báo.
+## GĐ2. Thống kê mô tả (Chap 1 §3–4) ⏳
 
-#### Bước 5.1: [Thuật toán Thống kê 1] Gaussian Process Regression (GPR) với Hạt nhân Tổ hợp (Composite Kernel)
-* **Vị thế SOTA:** Chuẩn mực vàng trong thống kê Bayes phi tham số cho bài toán Prognostics & Health Management (PHM). GPR giải quyết bài toán mà các mô hình hồi quy thông thường thất bại: **Định lượng Độ bất định (Uncertainty Quantification - UQ)**.
-* **Cơ sở Toán học & Phương pháp:**
-  * Giả định hàm suy thoái ẩn $f(x)$ tuân theo một quá trình Gaussian: $f(x) \sim \mathcal{GP}(m(x), k(x, x'))$, với hàm kỳ vọng $m(x) = 0$ và hàm hiệp phương sai hạt nhân $k(x, x')$.
-  * Với tập dữ liệu quan sát $\mathcal{D} = \{(x_i, y_i)\}_{i=1}^N$, phân phối tiên nghiệm kết hợp với phân phối hợp chuẩn (Joint Gaussian Distribution) cho điểm dự báo mới $x_*$:
-    $$\begin{bmatrix} \mathbf{y} \\ f(x_*) \end{bmatrix} \sim \mathcal{N}\left(\mathbf{0}, \begin{bmatrix} K(X, X) + \sigma_n^2 I & K(X, x_*) \\ K(x_*, X) & k(x_*, x_*) \end{bmatrix}\right)$$
-  * Phân phối hậu nghiệm điều kiện (Conditional Posterior) cho ra giá trị kỳ vọng dự báo $\mu_*$ và phương sai bất định $\sigma_*^2$:
-    $$\mu_* = K(x_*, X)\left[K(X, X) + \sigma_n^2 I\right]^{-1} \mathbf{y}$$
-    $$\sigma_*^2 = k(x_*, x_*) - K(x_*, X)\left[K(X, X) + \sigma_n^2 I\right]^{-1} K(X, x_*)$$
-* **Thiết kế Hạt nhân Tổ hợp Đột phá (Composite Kernel Design cho Pin Li-ion):**
-  * Do pin dưới tải ngẫu nhiên có cả xu hướng lão hóa dài hạn, dao động hồi phục dung lượng cục bộ sau thời gian nghỉ (Capacity Regeneration), và nhiễu ngẫu nhiên, ta thiết kế hạt nhân:
-    $$k_{\text{composite}}(x, x') = k_{\text{Matérn 5/2}}(x, x') + k_{\text{RQ}}(x, x') + \sigma_n^2 \delta(x, x')$$
-    * *Matérn 5/2 Kernel:* Bắt trọn xu hướng suy giảm dung lượng thực tế (mềm dẻo hơn RBF, không giả định độ trơn vô hạn).
-    * *Rational Quadratic (RQ) / Exp-Sine-Squared Kernel:* Nắm bắt sự biến thiên đa tỉ lệ thời gian và hiện tượng tự hồi phục dung lượng khi pin nghỉ.
-    * *White Noise Kernel ($\sigma_n^2$):* Tách biệt nhiễu đo lường của cảm biến dòng/áp.
-* **Đầu ra:** Điểm dự báo SOH trung bình cùng **Dải khoảng tin cậy 95% Confidence Interval** ($\mu_* \pm 1.96\sigma_*$) và xác định khoảng thời gian pin chạm ngưỡng EOL (80% SOH) với độ bất định xác suất.
+- **Ai:** lead là Minh Vũ. Cả nhóm cùng làm notebook `01_descriptive.ipynb`.
+- **Input:** `cycles_clean.csv`, `battery_summary.csv`, `battery_fade.csv` (chạy `python src/eda_dataset.py` để tạo các hình nền).
 
-#### Bước 5.2: [Thuật toán Thống kê 2] Bayesian Structural Time Series (BSTS) & Dynamic State-Space Modeling
-* **Vị thế SOTA:** Mô hình chuỗi thời gian hiện đại thế hệ mới, vượt trội hơn hẳn ARIMA/SARIMA truyền thống. BSTS kết hợp biểu diễn không gian trạng thái (State-Space Formulation) với suy diễn Bayes thông qua thuật toán MCMC (Markov Chain Monte Carlo Gibbs Sampling).
-* **Cơ sở Toán học & Phương pháp:**
-  * Mô hình hóa chuỗi quan sát dung lượng $y_t$ thông qua phương trình quan sát (Observation equation) và phương trình trạng thái ẩn (State equation):
-    $$y_t = Z_t^T \alpha_t + \beta^T X_t + \epsilon_t, \quad \epsilon_t \sim \mathcal{N}(0, H_t)$$
-    $$\alpha_{t+1} = T_t \alpha_t + R_t \eta_t, \quad \eta_t \sim \mathcal{N}(0, Q_t)$$
-  * Trong đó:
-    * $\alpha_t$: Vector trạng thái ẩn đại diện cho **Local Linear Trend** (mức độ suy thoái $\mu_t$ và tốc độ suy thoái $\delta_t$):
-      $$\mu_{t+1} = \mu_t + \delta_t + \eta_{\mu, t}, \quad \delta_{t+1} = \delta_t + \eta_{\delta, t}$$
-    * $Z_t$: Ma trận liên kết trạng thái quan sát.
-    * $X_t$: Vector **các biến ngoại sinh động (Dynamic Exogenous Regressors)** đại diện cho điều kiện vận hành ngẫu nhiên tức thời: Cường độ dòng xả trung bình trong chu kỳ, Tích phân nhiệt độ vượt ngưỡng, Thời gian nghỉ giữa các phiên nạp/xả.
-    * $\beta$: Vector hệ số hồi quy được áp dụng phân phối tiên nghiệm Spike-and-Slab (Bayesian Model Averaging) để tự động chọn lọc biến ngoại sinh quan trọng nhất.
-* **Thuật toán Huấn luyện:** Áp dụng Kalman Filter để tính toán likelihood và thuật toán Durbin-Koopman Simulation Smoother kết hợp MCMC Gibbs Sampling (với 5,000 - 10,000 lần lấy mẫu) để rút ra phân phối hậu nghiệm đầy đủ của toàn bộ quỹ đạo suy thoái.
-* **Đầu ra:** Biểu đồ phân rã chuỗi thời gian thành các thành phần độc lập (Trend component, Cyclical component, Regressor contributions) và dự báo suy thoái tương lai kèm dải mật độ hậu nghiệm (Posterior Predictive Interval).
+### 2.1 Bảng thống kê mô tả
+- **Chỉ số:** n, mean, median, Q1, Q3, SD, SE, min, max, range, skewness, kurtosis. Đây đúng là danh sách tóm tắt ở slide Chap 1, tr. 57.
+- **Hai mức tính:**
+  - Mức chu kỳ: `capacity_int_Ah`, `soh`, `T_max_C`, `Re_ohm`, `Rct_ohm`, `rest_before_h`.
+  - Mức pin: `C0_Ah`, `soh_last`, `fade_pct_per_100cyc`, `cycles_to_soh80`.
+- **Tách theo nhóm điều kiện** (nhiệt độ × dòng xả). Lý do: `T_max_C` có kurtosis 1,95 và nhiều đỉnh khi gộp ba mức nhiệt.
+- ⚠ **Kurtosis:** pandas trả về *excess kurtosis*. Phải cộng thêm 3 để đúng quy ước trên slide (phân phối chuẩn = 3).
 
-#### Bước 5.3: [Thuật toán Machine Learning] CatBoost Regressor (Categorical Gradient Boosting)
-* **Vị thế SOTA:** Thuật toán hàng đầu thế giới hiện nay cho dữ liệu dạng bảng/chuỗi đặc trưng kỹ thuật, khắc phục triệt để điểm yếu của XGBoost và LightGBM khi xử lý các biến phân nhóm phức tạp và kích thước tập dữ liệu lớn.
-* **Cơ sở Toán học & Tính năng Vượt trội cho Dataset Pin:**
-  1. **Cơ chế Ordered Boosting:** Các thuật toán Boosting truyền thống tính toán gradient trên cùng mẫu dữ liệu dùng để xây dựng cây, dẫn đến hiện tượng dịch chuyển dự báo (Prediction Shift) và Overfitting. CatBoost sử dụng nguyên lý hoán vị ngẫu nhiên (Random Permutations) để tính gradient trên các mẫu chưa từng thấy, đảm bảo tính tổng quát hóa tuyệt đối khi kiểm thử trên cell pin mới.
-  2. **Xử lý Biến Phân nhóm Độc quyền (Target-based Statistics):** Dữ liệu ALT chứa các biến phân nhóm mang tính bước ngoặt: `battery_type` (`Constant`, `Variable`, `Recommissioned`, `Second-life`), `mission_type` (0=Reference, 1=Regular). CatBoost tự động mã hóa biến hạng mục theo thứ tự thời gian, triệt tiêu nguy cơ rò rỉ dữ liệu (Target Leakage).
-  3. **Cấu trúc Cây Đối xứng (Oblivious Trees):** Sử dụng cùng một tiêu chí phân nhánh cho toàn bộ các node ở cùng độ sâu, giúp mô hình có tính chính quy hóa cao, chống nhiễu cảm biến và tốc độ suy luận (Inference Latency) cực nhanh trên thiết bị nhúng BMS (Battery Management System).
-* **Chiến lược Huấn luyện & Tối ưu Siêu tham số:**
-  * Hàm mất mát: Root Mean Squared Error (RMSE) kết hợp L2 Regularization.
-  * Tối ưu hóa siêu tham số bằng Bayesian Optimization (Optuna): Tinh chỉnh `depth` (4 - 8), `learning_rate` (0.01 - 0.1), `l2_leaf_reg` (1 - 10), và `random_strength`.
-* **Đầu ra:** Mô hình hồi quy SOH tức thời với độ chính xác cao nhất trên tập đặc trưng HIs; bảng xếp hạng Feature Importance và ma trận tương tác đặc trưng.
+### 2.2 Biểu đồ (Chap 1, tr. 59–63)
 
-#### Bước 5.4: [Thuật toán Deep Learning] Time Series Transformer Encoder (Transformer Thuần cho Chuỗi Thời gian)
-* **Vị thế SOTA & Tính Khả thi Cao:** Thay vì sử dụng các kiến trúc lai ghép rườm rà dễ bị hội đồng hỏi vặn vẹo lý do ghép tầng, đồ án triển khai **mô hình Transformer Encoder thuần túy** (chuẩn mực kinh điển theo kiến trúc *Attention Is All You Need* của Vaswani et al. áp dụng cho chuỗi thời gian). Mô hình có cấu trúc toán học trong sáng, thanh lịch, sinh viên có thể nắm vững 100% từng công thức để tự tin thuyết trình bảo vệ.
-* **Cơ sở Toán học & Kiến trúc Mạch lạc (4 Khối Chuẩn Mực):**
-  1. **Khối Chiếu Tuyến tính & Mã hóa Vị trí (Input Projection & Positional Encoding):**
-     * Chuỗi vector đặc trưng chu kỳ $X = [x_1, x_2, \dots, x_T] \in \mathbb{R}^{T \times d_{\text{in}}}$ được chiếu lên không gian ẩn: $E = X W_p$ (với $d_{\text{model}} = 64$).
-     * Bổ sung vector mã hóa vị trí thời gian để mô hình nhận biết được thứ tự già hóa của các chu kỳ:
-       $$Z_0 = E + PE, \quad \text{với } PE_{(pos, 2i)} = \sin\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right), \; PE_{(pos, 2i+1)} = \cos\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right)$$
-  2. **Khối Multi-Head Self-Attention (Tự Chú ý Đa đầu):**
-     * Biểu diễn $Z$ được biến đổi tuyến tính thành 3 ma trận: Query ($Q$), Key ($K$), Value ($V$):
-       $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
-     * Sử dụng 4 đầu chú ý ($h = 4$) để học các mối quan hệ tương quan giữa các chu kỳ sạc/xả ở các khoảng cách thời gian khác nhau:
-       $$\text{MHA}(Q, K, V) = \text{Concat}(\text{head}_1, \dots, \text{head}_4)W^O$$
-     * **Cách giải thích trước Hội đồng:** *"Self-Attention tính toán xem chu kỳ hiện tại bị ảnh hưởng bao nhiêu phần trăm bởi các chu kỳ chịu tải nặng hoặc quá nhiệt trong quá khứ, từ đó phát hiện sớm điểm gãy suy thoái (knee-point)."*
-  3. **Khối Kết nối Tắt & Chuẩn hóa Lớp (Residual Connection & Layer Normalization):**
-     * Giúp gradient lan truyền thông suốt, loại bỏ hoàn toàn hiện tượng triệt tiêu đạo hàm:
-       $$Z'_l = \text{LayerNorm}(Z_{l-1} + \text{MHA}(Z_{l-1}))$$
-       $$Z_l = \text{LayerNorm}(Z'_l + \text{FFN}(Z'_l))$$
-  4. **Tầng Tuyến tính Hồi quy (Linear Regression Head):**
-     * Lấy vector biểu diễn tại bước thời gian cuối cùng $Z_L[T]$ đưa qua một lớp Linear Layer duy nhất: $\hat{y}_{\text{RUL}} = Z_L[T] W_o + b_o$.
-* **Tính Thực thi Tuyệt đối cho Sinh viên:**
-  * Toàn bộ kiến trúc được xây dựng hoàn toàn từ module chuẩn có sẵn của PyTorch: `nn.TransformerEncoder` và `nn.TransformerEncoderLayer` (chỉ mất khoảng 25 dòng code).
-  * Huấn luyện chỉ mất 2 - 3 phút trên Google Colab GPU miễn phí (hoặc 5 phút trên CPU máy cá nhân).
-* **Đầu ra:** Dự báo chính xác Tuổi thọ Còn lại (Remaining Useful Life - RUL); biểu đồ ma trận chú ý (Attention Map) trực quan sinh động minh chứng cho hội đồng thấy các chu kỳ then chốt chi phối tuổi thọ pin.
+| Hình | Nội dung | Đọc như thế nào |
+|---|---|---|
+| Histogram SOH | Phân phối SOH ở mức chu kỳ | Lệch trái (skewness −0,64). Phần lớn chu kỳ nằm ở giai đoạn SOH còn cao. |
+| Histogram `rest_before_h` (thang log) | Phân phối thời gian nghỉ | Lệch phải cực mạnh (skewness 10,6), nên phải dùng log hoặc chia nhóm (Chap 1, tr. 17). |
+| Boxplot `T_max_C` theo nhiệt độ môi trường | Mức tự phát nhiệt khi xả | Trung vị 15,0 / 40,6 / 61,8°C ở 4 / 24 / 43°C |
+| Boxplot tốc độ suy giảm theo điều kiện | So sánh trực quan để chuẩn bị cho GĐ3 | Xem độ dài whisker để đánh giá phương sai trước khi chạy Levene |
+| Đường SOH theo chu kỳ (`fig1`) | Hình chủ đạo của báo cáo | Tô màu theo nhiệt độ, chia panel theo mức dòng |
+| Scatter Re/Rct theo SOH (`fig5`) | Chuẩn bị cho hồi quy và SEM | r = −0,78 với Re và −0,81 với Rct (G1) |
 
-#### Bước 5.5: Baseline Đối chứng & Chiến lược Đánh giá Chéo Toàn diện (Leave-One-Battery-Out CV)
-* **Mô hình Baseline Đối chứng:**
-  * Hồi quy Tuyến tính Đa biến (OLS/Ridge) làm mốc tham chiếu thống kê tuyến tính cơ bản.
-  * ARIMA/SARIMA làm mốc tham chiếu chuỗi thời gian cổ điển.
-* **Chiến lược Kiểm thử Chéo Khách quan (Leave-One-Battery-Out Cross-Validation - LOBO-CV):**
-  * Chia dữ liệu theo từng cell pin độc lập: Huấn luyện trên $N-1$ khối pin và kiểm thử trên 1 khối pin chưa từng thấy; lặp lại cho toàn bộ các khối pin trong tập dữ liệu. Tuyệt đối không xáo trộn ngẫu nhiên (Random Shuffle) nhằm ngăn chặn rò rỉ dữ liệu chuỗi thời gian.
-* **Bảng Đánh giá & So sánh Đa Chỉ số Toàn diện (Comprehensive Evaluation Matrix):**
-  * Thước đo sai số: $R^2$, RMSE, MAE, MAPE.
-  * Thước đo thống kê thông tin: AIC, BIC, Log-Likelihood.
-  * Thước đo độ bất định: Prediction Interval Coverage Probability (PICP $\ge 95\%$), Mean Prediction Interval Width (MPIW).
-  * Hiệu năng triển khai: Training Time (s) và Inference Latency (ms/sample) phục vụ đánh giá tính khả thi trên hệ thống nhúng BMS.
+### 2.3 Viết nhận xét theo mẫu slide Chap 1, tr. 60
+Mạch viết: phát hiện, rồi con số, rồi hàm ý. Ví dụ:
+> "Ở 43°C, nhiệt độ cell khi xả đạt trung vị 61,8°C, so với 40,6°C ở 24°C. Xét trên cùng cửa sổ 25 chu kỳ đầu, pin ở 43°C mất khoảng 27,9 điểm % SOH sau mỗi 100 chu kỳ, so với 20,1 điểm % ở 24°C cùng dòng 4 A. Như vậy hệ thống làm mát cho pack là yêu cầu bắt buộc với xe vận hành ở khí hậu nóng."
+
+**Output:** `notebooks/01_descriptive.ipynb` và hình trong `reports/figures/`.
+**Xong khi:** mỗi bảng và mỗi hình có 2–3 câu diễn giải, và mỗi người giải thích được một hình bất kỳ.
 
 ---
 
-### GIAI ĐOẠN 6: DIỄN GIẢI MÔ HÌNH (XAI) & ĐÓNG GÓP ỨNG DỤNG THỰC TIỄN (BUSINESS & OPERATIONAL INSIGHTS)
-> **Mục tiêu:** Biến các con số thống kê và thuật toán thành giá trị kinh tế, quản trị và vận hành thực tế; đáp ứng yêu cầu "Practical Implications for Business / Healthcare" trong đề cương môn học.
+## GĐ3. Thống kê suy diễn (Chap 2) ⏳
 
-#### Bước 6.1: Giải thích Mô hình Học máy bằng SHAP (Explainable AI - XAI)
-* Ứng dụng lý thuyết trò chơi hợp tác (Shapley Values) thông qua thư viện `shap`:
-  * SHAP Summary Plot: Xếp hạng các yếu tố ảnh hưởng mạnh nhất đến sự suy giảm SOH.
-  * SHAP Dependence Plot: Làm rõ quan hệ phi tuyến (ví dụ: nhiệt độ vượt quá 35°C sẽ làm tăng tốc độ lão hóa pin theo hàm mũ).
-  * SHAP Force Plot / Waterfall Plot: Giải thích chi tiết tại sao mô hình dự báo một khối pin cụ thể sắp chạm ngưỡng hư hỏng.
+- **Ai:** lead là Tiến Hưng. Cả nhóm làm notebook `02_inferential.ipynb`.
+- **Input:** `data/processed/battery_fade.csv`, mỗi dòng là **một pin** (23 pin có điều kiện không đổi).
 
-#### Bước 6.2: Phân tích Ý nghĩa Kinh tế & Quản trị Rủi ro (Business & Economics Implications)
-* **Tối ưu hóa quản lý đội xe điện (EV Fleet Management):**
-  * Xây dựng mô hình chi phí vòng đời (Total Cost of Ownership - TCO): Cân bằng giữa việc khai thác tối đa công suất (dòng xả cao, sạc nhanh) và chi phí hao mòn tài sản pin.
-  * Lập lịch trình bảo trì dự đoán (Predictive Maintenance Scheduling): Giảm thiểu tình trạng dừng xe đột ngột (unplanned downtime) và rủi ro cháy nổ do nhiệt.
-* **Định giá và thương mại hóa pin vòng đời 2 (Second-life Battery Economics):**
-  * Phân loại (Grading) chính xác chất lượng pin thải từ xe điện để tái sử dụng trong các hệ thống lưu trữ năng lượng mặt trời/lưới điện (BESS), mở ra nguồn doanh thu phụ và giảm chi phí đầu tư ban đầu (CAPEX).
-* **Ứng dụng công nghệ quản lý sức khỏe thiết bị (Industrial Health-Tech Analogy):**
-  * So sánh đối chiếu mô hình dự báo SOH của pin với bài toán quản lý thiết bị y tế (Medical Device Reliability) trong bệnh viện: dự báo suy thoái nguồn điện dự phòng UPS khẩn cấp của phòng mổ để đảm bảo an toàn tính mạng bệnh nhân.
+> **Nguyên tắc vàng: đơn vị quan sát là PIN.**
+> - ANOVA giả định các quan sát độc lập (Chap 2, tr. 75).
+> - Các chu kỳ trong cùng một pin có tự tương quan bậc 1 tới 0,93 (F9).
+> - Nếu dùng khoảng 2.000 chu kỳ làm mẫu, p-value sẽ nhỏ một cách giả tạo (pseudo-replication).
 
----
+**Biến phụ thuộc:** `fade_pct_per_100cyc` (cả chuỗi) và `fade25_pct_per_100cyc` (25 chu kỳ đầu, cửa sổ chung cho mọi pin).
+- **Chạy mọi kiểm định trên cả hai biến.** Nếu kết luận khác nhau thì phải báo cáo rõ, vì đó chính là kiểm tra độ vững (robustness).
 
-### GIAI ĐOẠN 7: HOÀN THIỆN TOÀN BỘ BỘ SẢN PHẨM ĐẦU RA (DELIVERABLES PRODUCTION)
-> **Mục tiêu:** Biên soạn các báo cáo, bài báo, mã nguồn và tài liệu trình chiếu đạt chuẩn mực xuất sắc về hình thức lẫn nội dung.
+### 3.1 Khoảng tin cậy (Chap 2, tr. 4–19)
+- **CI 95% cho tốc độ suy giảm trung bình của mỗi nhóm điều kiện.**
+  - n < 30 và chưa biết σ, nên dùng t với df = n − 1 (tr. 8).
+  - Ví dụ: G3 có n = 4, t(3; 0,025) = 3,182, nên khoảng tin cậy sẽ rộng. Đây là bằng chứng định lượng cho phần hạn chế về số lượng pin.
+- **CI cho tỉ lệ (tr. 16–19):** tỉ lệ các lần xả có dung lượng tăng lên so với chu kỳ trước, trên tier A/B. Mẫu lớn nên dùng z.
+```python
+from scipy import stats
+x = fade.loc[fade.group == "G3", "fade_pct_per_100cyc"]
+ci = stats.t.interval(0.95, df=len(x) - 1, loc=x.mean(), scale=stats.sem(x))
+```
 
-#### Bước 7.1: Viết Báo cáo Toàn văn Đồ án (Full Report ~30 trang)
-Biên soạn báo cáo word/pdf theo đúng khung 8 phần quy chuẩn của đề cương STAT3013:
-1. **Chapter 1: Introduction (~3 trang):** Bối cảnh cuộc cách mạng xe điện & lưu trữ năng lượng; tầm quan trọng của phân tích dữ liệu và AI trong PHM; mục tiêu nghiên cứu và cấu trúc báo cáo.
-2. **Chapter 2: Literature Review (~4 trang):** Tổng quan nghiên cứu về suy thoái pin Li-ion; các phương pháp thống kê truyền thống vs ML/DL; chỉ ra khoảng trống nghiên cứu (Research Gap) đối với tải ngẫu nhiên động (Random Walk).
-3. **Chapter 3: Research Methodology (~5 trang):** Mô tả chi tiết 2 bộ dữ liệu (NASA RW & ALT); cơ sở toán học của các kiểm định thống kê (t-test, ANOVA), mô hình chuỗi thời gian (ARIMA), mô hình phi tham số Bayes (GPR) và các thuật toán ML/DL.
-4. **Chapter 4: Implementation & Experiments (~6 trang):** Quy trình tiền xử lý, công thức tính HIs, kiến trúc mã nguồn Python, cấu hình siêu tham số và thiết lập thực nghiệm kiểm thử chéo LOBO-CV.
-5. **Chapter 5: Results & Discussion (~7 trang):** Trình bày kết quả từng chặng (Thống kê mô tả $\to$ Kiểm định suy diễn $\to$ Hồi quy/ARIMA $\to$ GPR $\to$ ML/DL); biểu đồ so sánh độ chính xác và khoảng tin cậy.
-6. **Chapter 6: Conclusion & Recommendations (~3 trang):** Tóm tắt các phát hiện then chốt; khuyến nghị thực tiễn cho nhà quản lý trạm sạc, nhà sản xuất pin và đội xe điện; hạn chế và hướng phát triển tương lai.
-7. **Chapter 7: References (~2 trang):** Danh mục tài liệu tham khảo chuẩn IEEE/APA (tối thiểu 15-20 bài báo từ các tạp chí uy tín IEEE, Elsevier Applied Energy, Journal of Power Sources).
-8. **Chapter 8: Appendix (~2 trang):** Bảng phụ lục tham số, link GitHub repo, link video demo, chứng nhận Turnitin và AI Audit.
+### 3.2 So sánh hai nhóm, chỉ khác nhau một yếu tố (tr. 38–53)
 
-#### Bước 7.2: Soạn thảo Bài báo Khoa học chuẩn IEEE (IEEE Paper 7-10 trang)
-* Soạn thảo trên template 2 cột (IEEE Conference Template) bằng LaTeX hoặc MS Word.
-* Nội dung cô đọng, văn phong học thuật tiếng Anh chuẩn xác, biểu đồ vector độ phân giải cao (300+ DPI), phương trình toán học gõ LaTeX chuẩn mực.
-* Cấu trúc: Abstract, Keywords, I. Introduction, II. Related Work, III. Methodology & Feature Extraction, IV. Statistical Analysis & Hypothesis Testing, V. SOH Prognostics Models, VI. Experimental Results & Discussion, VII. Industrial Implications, VIII. Conclusion, References.
+| # | So sánh | H0 / Ha | Loại kiểm định | Ghi chú |
+|---|---|---|---|---|
+| T1 | **Nhiệt độ ở 4 A:** G3 (43°C, n = 4) với B0033/B0034 (24°C, n = 2) | H0: μ43 = μ24; Ha: μ43 > μ24 (một phía) | t-test (Issue 3) | Giả thuyết một phía phải lấy từ tài liệu tham khảo (nhiệt cao đẩy nhanh phản ứng phụ), **nêu trước khi nhìn số liệu** |
+| T2 | **Nhiệt độ ở 2 A:** G1 (24°C, n = 4) với G9 (4°C, n = 3, không gồm B0054) | H0: μ24 = μ4; Ha: μ24 ≠ μ4 | t-test hai phía (Issue 1) | |
+| T3 | **Dòng xả ở 4°C:** G7 (1 A, n = 4) với G9 (2 A, n = 3) | H0: μ1A = μ2A; Ha: ≠ | t-test hai phía | Kết quả dự kiến ngược trực giác: 1 A suy giảm nhanh hơn. Gợi ý giải thích qua nhiệt độ cell (xem 3.6). |
+| T4 | **Profile ở 24°C/4 A:** G2 xung vuông (B0025–27) với CC (B0033/B0034) | H0: μsq = μcc | t-test hai phía | |
 
-#### Bước 7.3: Thiết kế Bộ Slide Thuyết trình Bảo vệ Đồ án (Presentation Deck 20-25 slides)
-* Thiết kế hiện đại, tinh gọn (16:9), hạn chế chữ dày đặc, tập trung vào sơ đồ pipeline kiến trúc, biểu đồ trực quan hóa dữ liệu và bảng so sánh kết quả.
-* Thứ tự trình bày logic: Vấn đề $\to$ Dữ liệu $\to$ Phương pháp thống kê & Kiểm định $\to$ Mô hình ML & Dự báo $\to$ Ý nghĩa ứng dụng $\to$ Kết luận.
+**Quy trình cho mỗi cặp:**
+1. **F-test** (tr. 51) hoặc **Levene** (tr. 64) để kiểm tra phương sai bằng nhau.
+2. Nếu phương sai bằng nhau thì dùng t-test pooled, df = n₁ + n₂ − 2 (tr. 40). Nếu không thì dùng Welch t-test, và ghi chú rằng Welch là mở rộng ngoài slide.
+3. Báo cáo đầy đủ: thống kê T, df, giá trị tới hạn, p-value, kết luận, ý nghĩa thực tế.
+```python
+stats.levene(a, b, center="median")
+stats.ttest_ind(a, b, equal_var=True, alternative="greater")   # T1
+```
 
-#### Bước 7.4: Sản xuất Video Clip Demo (Demo Video 3-5 phút)
-* Kịch bản video súc tích:
-  * 00:00 - 00:45: Giới thiệu đề tài, mục tiêu và ý nghĩa thực tiễn.
-  * 00:45 - 01:30: Trực quan hóa dữ liệu NASA RW & ALT (EDA Dashboard).
-  * 01:30 - 02:45: Demo pipeline huấn luyện, kiểm định thống kê và chạy dự báo SOH/RUL trên cell pin mới.
-  * 02:45 - 03:30: Diễn giải biểu đồ khoảng tin cậy GPR và SHAP feature importance.
-  * 03:30 - 04:00: Tổng kết và thông điệp nhóm.
-* Thu âm giọng đọc rõ ràng, chất lượng video Full HD (1080p), upload YouTube (chế độ Unlisted) hoặc Google Drive.
+### 3.3 One-way ANOVA và Tukey HSD (tr. 72–89)
+- **Nhân tố:** "nhóm điều kiện", gồm 6 mức: 24°C/2A, 24°C/4A, 24°C/xung vuông, 43°C/4A, 4°C/1A, 4°C/2A.
+- **Trình tự:** Levene, rồi `f_oneway`. Nếu p < 0,05 thì chạy `pairwise_tukeyhsd` để biết cặp nào khác nhau.
+- **Kiểm tra phân phối chuẩn:** n quá nhỏ, nên dùng QQ-plot của phần dư. Nếu vi phạm, chạy thêm Kruskal-Wallis như phương án thay thế và ghi rõ nằm ngoài slide.
+- ⚠ Khi diễn giải phải gọi là **"nhóm điều kiện"**, không gọi là "nhiệt độ", vì nhiệt độ bị lẫn với dòng xả.
 
-#### Bước 7.5: Kiểm toán Đạo văn & Nội dung AI (Plagiarism & AI Check)
-* Quét toàn bộ Full Report và IEEE Paper qua hệ thống Turnitin trường/quốc tế: Đảm bảo độ tương đồng **Similarity Index $\le 10\%$**.
-* Quét kiểm tra AI-generated content (Grammarly/Quillbot), chụp màn hình bằng chứng đính kèm vào mục Phụ lục (Appendix) theo đúng yêu cầu giảng viên.
+### 3.4 Two-way ANOVA: viết rõ vì sao KHÔNG làm được (tr. 90)
+Bảng số pin theo từng ô (nhiệt độ × dòng xả, chỉ tính CC):
 
-#### Bước 7.6: Đóng gói GitHub Repository & Cloud Storage
-* Đổi tên repository theo đúng quy định: `STAT3013.QXX_GroupYY`.
-* Viết file `README.md` chỉn chu: Huy hiệu (Badges), Giới thiệu dự án, Hướng dẫn cài đặt 1 lệnh (`pip install -r requirements.txt`), Hướng dẫn chạy notebook tái lập kết quả, Bảng so sánh mô hình và thông tin thành viên.
-* Lưu trữ các file dữ liệu lớn và video demo trên Google Drive/OneDrive, đặt link công khai trong README và Báo cáo.
+| | 1 A | 2 A | 4 A |
+|---|---|---|---|
+| 4°C | 4 | 3–4 | 0 |
+| 24°C | 0 | 5 | 2 |
+| 43°C | 0 | 0 | 4 |
 
----
+- Slide yêu cầu cỡ mẫu bằng nhau ở mọi ô. Ở đây có nhiều ô bằng 0, nên **không ước lượng được hiệu ứng tương tác**.
+- Đoạn giải thích này nên đưa nguyên vào báo cáo, vì nó thể hiện hiểu biết về giả định của phương pháp.
 
-### GIAI ĐOẠN 8: CHUẨN BỊ BẢO VỆ & DIỄN TẬP VẤN ĐÁP (DEFENSE REHEARSAL)
-> **Mục tiêu:** Đảm bảo 100% thành viên am hiểu toàn diện đề tài, tự tin trả lời xuất sắc mọi câu hỏi phản biện của hội đồng giảng viên.
+### 3.5 Chi-square (tr. 56–63)
+- **Bảng chéo ở mức pin:** nhóm nhiệt độ (4°C, 24°C, 43°C) × "đã xuống dưới SOH 0,9 trong 40 chu kỳ đầu (có/không)".
+- Mốc 40 chu kỳ được chọn vì đây là số chu kỳ ngắn nhất của G3, nên mọi pin đều được quan sát đủ.
+- Tính bảng tần số kỳ vọng E_ij như ví dụ ở tr. 59–60. Nếu E_ij < 5 thì kết quả không tin cậy; ghi chú Fisher exact là phương án thay thế.
 
-#### Bước 8.1: Xây dựng Bộ Câu hỏi Phản biện Tiêu biểu (Defense Q&A Bank)
-Nhóm chuẩn bị sẵn câu trả lời chi tiết cho các câu hỏi tiềm năng:
-1. *Về Thống kê:* "Tại sao lại chọn Mann-Whitney U thay vì t-test?", "Giả định của ANOVA có bị vi phạm không và xử lý thế nào?", "Khoảng tin cậy 95% của GPR mang ý nghĩa gì trong thực tiễn?".
-2. *Về Kỹ thuật & Pin:* "SOH được tính thế nào nếu không có chu kỳ kiểm chuẩn?", "Hiện tượng knee-point là gì và mô hình có bắt được không?", "Sự khác biệt giữa pin Fresh và Second-life là gì?".
-3. *Về Học máy:* "Tại sao chọn Leave-One-Battery-Out CV?", "Làm thế nào để chứng minh mô hình không bị Overfitting?", "Tại sao SHAP value lại chỉ ra điện trở là yếu tố quan trọng nhất?".
-4. *Về Ứng dụng:* "Kết quả này giúp doanh nghiệp tiết kiệm chi phí hay nâng cao an toàn như thế nào?".
+### 3.6 Bổ sung: tương quan giữa tốc độ suy giảm và nhiệt độ cell
+- Tương quan Pearson giữa `fade_pct_per_100cyc` và `T_max_med` ở mức pin, kèm scatter.
+- **Mục đích:** kiểm tra giả thuyết "nhiệt độ của chính cell, chứ không phải nhiệt độ môi trường, mới quyết định tốc độ suy giảm" (từ kết quả T3).
 
-#### Bước 8.2: Diễn tập Báo cáo (Mock Defense) & Căn chỉnh Thời gian
-* Tổ chức buổi diễn tập nội bộ: Mỗi thành viên trình bày phần việc của mình trong khung thời gian quy định (thường 15-20 phút toàn nhóm).
-* Thực hiện phản biện chéo giữa các thành viên: Thành viên phụ trách ML hỏi thành viên phụ trách Thống kê và ngược lại, xóa bỏ hoàn toàn tình trạng "lỗ hổng kiến thức phân mảnh" (khắc phục triệt để ràng buộc: *All members must understand the entire project*).
+**Output:** bảng tổng hợp gồm các cột: Kiểm định | H0 | Thống kê | df | p | Kết luận | Ý nghĩa kinh doanh.
+**Xong khi:** mọi kiểm định đều ghi rõ giả định đã kiểm tra, và mỗi người tự trả lời được câu hỏi "vì sao dùng t mà không dùng z".
 
 ---
 
-## III. MA TRẬN PHÂN CÔNG TRÁCH NHIỆM (RACI MATRIX)
+## GĐ4. Giao thức mô hình chung ⏳ (bắt buộc trước khi chia nhau làm)
 
-| Nhiệm vụ / Giai đoạn | TV1 (Lead / Modeling) | TV2 (Stats / Inferential) | TV3 (Data & Features) | TV4 (Report & Deliverables) |
-| :--- | :---: | :---: | :---: | :---: |
-| **Giai đoạn 1:** Khởi tạo Repo, Chuyển đổi dữ liệu thô sang Parquet | **A** | **C** | **R** | **I** |
-| **Giai đoạn 2:** Thống kê mô tả (Descriptive Stats) & Biểu đồ EDA | **C** | **A** | **R** | **C** |
-| **Giai đoạn 3:** Thống kê suy diễn (t-test, ANOVA, Effect Size) | **I** | **R / A** | **C** | **C** |
-| **Giai đoạn 4:** Kỹ nghệ chỉ số sức khỏe pin (HIs, SOH ground truth) | **C** | **C** | **R / A** | **I** |
-| **Giai đoạn 5:** Xây dựng mô hình (4 SOTA: GPR, BSTS, CatBoost, Transformer) | **R / A** | **C** | **C** | **I** |
-| **Giai đoạn 6:** Phân tích SHAP & Tác động Kinh tế (Business Insights) | **R** | **C** | **I** | **R / A** |
-| **Giai đoạn 7.1:** Biên soạn Full Report 30 trang | **C** | **C** | **C** | **R / A** |
-| **Giai đoạn 7.2:** Soạn thảo IEEE Conference Paper 7-10 trang | **R** | **R** | **C** | **A** |
-| **Giai đoạn 7.3 - 7.6:** Slide, Video Demo, Turnitin & Repo đóng gói | **C** | **C** | **R** | **R / A** |
-| **Giai đoạn 8:** Tổng duyệt phản biện & Bảo vệ đồ án | **R / A** | **R / A** | **R / A** | **R / A** |
+- **Ai:** Khải Hưng (R), cả nhóm thống nhất.
+- **Vì sao:** đề cương yêu cầu "Compare models (accuracy, p-value, RMSEA, R², sensitivity)". Muốn so sánh được thì 4 mô hình phải dùng **cùng dữ liệu, cùng cách chia và cùng metric**.
 
-*Ghi chú:*
-* **R (Responsible):** Người trực tiếp thực hiện chính.
-* **A (Accountable):** Người chịu trách nhiệm nghiệm thu chất lượng cuối cùng.
-* **C (Consulted):** Người được tham vấn, hỗ trợ chuyên môn chéo.
-* **I (Informed):** Người được thông báo tiến độ và kết quả để nắm bao quát.
+### 4.1 Dữ liệu
+- Lấy tier A trong `cycles_clean.csv`, bỏ các dòng `cap_outlier` và `break_in`.
+- Biến mục tiêu: `soh`.
+- Trục thời gian: `cycle_valid`.
+
+### 4.2 Chia train/test theo pin
+| Tập | Pin |
+|---|---|
+| **Test** (mỗi điều kiện một pin) | B0007 (24°C/2A), B0034 (24°C/4A), B0047 (4°C/1A), B0055 (4°C/2A) |
+| **Train** | B0005, B0006, B0018, B0033, B0045, B0046, B0048, B0056 |
+| Validation (để chọn siêu tham số) | `GroupKFold` theo `battery_id` **trên tập train**, k = 4 |
+
+*Vì sao không chia ngẫu nhiên theo chu kỳ:* hai chu kỳ kề nhau gần như giống hệt nhau. Chia ngẫu nhiên sẽ cho R² khoảng 0,99, nhưng đó là R² ảo do rò rỉ dữ liệu.
+
+### 4.3 Hai kịch bản đánh giá
+
+| Kịch bản | Mô tả | Áp dụng cho |
+|---|---|---|
+| **E1: dự báo 1 bước** | Với **40% số chu kỳ cuối** của mỗi pin test, dự báo SOH tại chu kỳ t khi đã biết thông tin đến t−1 | Cả 4 mô hình. ARIMA được fit trên 60% đầu của chính pin đó, rồi dự báo cuốn chiếu từng bước. |
+| **E2: dự báo nhiều bước / RUL** | Đứng ở mốc 60% chuỗi, dự báo đến hết chuỗi. So sánh chu kỳ dự báo chạm SOH 0,8 với chu kỳ thực tế. | Các pin test có chạm 0,8 trong dữ liệu (B0007, B0034, B0047, B0055) |
+
+### 4.4 Metric (Chap 3, tr. 81–86)
+- MAE, RMSE, MAPE, R² trên E1.
+- Sai số RUL (số chu kỳ) trên E2.
+
+### 4.5 Baseline bắt buộc
+- **Naive persistence:** SOH_t = SOH_{t−1}.
+- Mọi mô hình **phải được so với baseline này**. Nếu không thắng baseline thì phải nói thẳng ra trong báo cáo.
+
+### 4.6 Danh sách biến được phép và bị cấm làm biến dự báo
+
+| Được phép dùng | Bị cấm (rò rỉ cùng chu kỳ) |
+|---|---|
+| `soh` và `capacity_int_Ah` ở các chu kỳ t−1, t−2, … | `capacity_*`, `energy_Wh`, `duration_s`, `t_to_cutoff_s` của **chính chu kỳ t** |
+| `chg_cc_time_s`, `chg_charge_Ah`, `chg_T_max_C` của lần sạc ngay trước chu kỳ t | `T_max_C`, `V_min` của chính chu kỳ t. Chỉ được dùng giá trị của t−1. |
+| `Re_ohm`, `Rct_ohm` (đã được lấy từ lần đo trước) | `C0_Ah` khi so sánh giữa các pin (vì đây là thông tin tương lai của giai đoạn break-in) |
+| `ambient_C`, `I_level_A`, `discharge_cutoff_V`, `profile`, `rest_before_h`, `cycle_valid` | |
+
+### 4.7 Định dạng file dự báo chung
+Mỗi mô hình xuất một file CSV vào `reports/predictions/<model>.csv` với các cột:
+```
+model, battery_id, cycle_valid, scenario (E1|E2), y_true, y_pred, y_lower, y_upper
+```
+- `y_lower` và `y_upper` là khoảng dự báo 95%, để trống nếu mô hình không cung cấp.
+- Notebook `60_compare.ipynb` (Leader phụ trách) đọc toàn bộ thư mục này và tự sinh bảng so sánh.
+
+**Xong khi:** có file `src/protocol.py` chứa hàm `load_split()` và `evaluate(pred_df)` dùng chung. Leader viết, cả nhóm review.
 
 ---
 
-## IV. TIẾN ĐỘ THỰC HIỆN DỰ KIẾN (TIMELINE MILESTONES)
+## GĐ5. Modeling song song ⏳
 
-| Tuần / Mốc thời gian | Trọng tâm công việc | Đầu ra cụ thể (Milestone Outputs) |
-| :---: | :--- | :--- |
-| **Tuần 1** | Hoàn thành Giai đoạn 1 & Khởi động Giai đoạn 2 | Pipeline đọc dữ liệu, bộ file `.parquet`, Notebook EDA cơ bản |
-| **Tuần 2** | Hoàn thành Giai đoạn 2 & Giai đoạn 3 | Bảng thống kê mô tả, kết quả kiểm định $t$-test / ANOVA / Effect size |
-| **Tuần 3** | Hoàn thành Giai đoạn 4 & Bắt đầu Giai đoạn 5 | Bộ đặc trưng HIs đã làm sạch, chuỗi Ground-truth SOH, baseline models |
-| **Tuần 4** | Hoàn thiện Giai đoạn 5 (4 mô hình SOTA) & Giai đoạn 6 | Bảng so sánh 4 mô hình SOTA (GPR, BSTS, CatBoost, Transformer), biểu đồ UQ 95%, SHAP |
-| **Tuần 5** | Triển khai Giai đoạn 7 (Viết Full Report & IEEE Paper) | Bản thảo Full Report (30 trang) và IEEE Paper (7-10 trang) trên Overleaf |
-| **Tuần 6** | Hoàn tất Video Demo, Slide, Quét Turnitin & GitHub | Video demo 1080p, slide hoàn chỉnh, Turnitin $\le 10\%$, GitHub repo chuẩn |
-| **Tuần 7** | Giai đoạn 8: Mock Defense & Nộp bài chính thức | Diễn tập vấn đáp 100% thành viên, nộp deliverables lên hệ thống khóa học |
+### GĐ5a. Quốc Đạt: Hồi quy bội (Chap 3), mở rộng logistic (Chap 4)
+
+**Notebook:** `notebooks/10_regression.ipynb` · **Review:** Tiến Hưng
+
+| Bước | Làm thế nào | Vì sao (slide) |
+|---|---|---|
+| 5a.1 Tương quan | Ma trận tương quan của `soh`, `cycle_valid`, `Re_ohm`, `Rct_ohm`, `T_max_C`, `chg_cc_time_s`. **Re và Rct có r = 0,97**, nên cảnh báo đa cộng tuyến. | Chap 3, tr. 8, tr. 41 (\|r\| > 0,7) |
+| 5a.2 Hồi quy đơn | `soh ~ cycle_valid` cho G1. Đọc R², SE, F-test, t-test và CI 95% của hệ số dốc. | tr. 22–30 |
+| 5a.3 Residual plot | Vẽ phần dư theo giá trị dự báo. Nếu thấy hình chữ U hoặc đường cong thì chuyển sang mô hình phi tuyến. | tr. 74, tr. 76 |
+| 5a.4 Log-linear | `ln(soh) ~ cycle_valid`, khi đó hệ số b₁·100 là % SOH thay đổi mỗi chu kỳ. So sánh với polynomial bậc 2 bằng adjusted R². | tr. 67–68, 73–74, 85 |
+| 5a.5 Hồi quy bội + dummy + tương tác | `ln(soh) ~ cycle_valid*C(temp) + cycle_valid*I_level_A + discharge_cutoff_V + profile` | tr. 52–60 (dummy k−1; tương tác giống ví dụ Age×MBA) |
+| 5a.6 Chọn mô hình | Bỏ dần biến có p lớn nhất vượt α = 0,05, theo dõi adjusted R². Kiểm tra VIF; nếu VIF > 10 thì không đưa Re và Rct vào cùng nhau. | tr. 39, 41 |
+| 5a.7 Kiểm tra giả định | Vẽ QQ-plot. Phần dư tự tương quan làm SE bị đánh giá thấp, nên **làm thêm hồi quy 2 bước**: `fade_pct_per_100cyc ~ temp + I_level_A + cutoff` trên `battery_fade.csv` (n = 23, các quan sát độc lập). | tr. 36; F9 |
+| 5a.8 Đánh giá | Dự báo trên tập test theo GĐ4 (E1, E2), xuất file vào `reports/predictions/regression.csv` | tr. 81–86 |
+| 5a.9 Diễn giải | Viết thành câu, ví dụ: "Ở 43°C, mỗi chu kỳ SOH giảm thêm x% so với 24°C, giữ các yếu tố khác không đổi" | tr. 73 |
+
+```python
+import numpy as np
+import statsmodels.formula.api as smf
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+m = smf.ols("np.log(soh) ~ cycle_valid * C(temp) + cycle_valid * I_level_A + discharge_cutoff_V",
+            data=train).fit()
+print(m.summary())       # R², adj R², F-test, t-test và CI của từng hệ số
+```
+
+**Mở rộng tùy chọn: logistic (Chap 4).**
+- **Nhãn:** y = 1 nếu SOH xuống dưới 0,8 **trong 20 chu kỳ tới**.
+- **Biến dự báo:** Re, Rct, `chg_cc_time_s`, ΔSOH 5 chu kỳ gần nhất, điều kiện vận hành.
+- **Ước lượng:** MLE (tr. 16–19). Diễn giải bằng odds ratio e^b.
+- **Đánh giá:**
+  - Confusion matrix.
+  - Ưu tiên **recall**: bỏ sót một pin sắp hỏng trên drone có thể làm rơi máy.
+  - ROC/AUC.
+  - **Lift ở top 10% rủi ro** (tr. 27): đây là câu chuyện "quản lý đội xe nên kiểm tra pin nào trước".
+- Tỉ lệ y = 1 thấp, nên dùng `class_weight="balanced"`.
+
+**Xong khi:** có bảng hệ số kèm CI, residual plot, bảng VIF, file dự báo, và một đoạn diễn giải có hàm ý kinh doanh.
 
 ---
 
-## V. TIÊU CHÍ TỰ ĐÁNH GIÁ ĐẠT ĐIỂM XUẤT SẮC (SCORECARD CHECKLIST)
+### GĐ5b. Tiến Hưng: ARIMA / ARIMAX (Chap 5)
 
-- [ ] **Mã nguồn:** Đã cấu trúc chuẩn `STAT3013.QXX_GroupYY`, chạy mượt mà từ đầu đến cuối không lỗi (One-click reproducible).
-- [ ] **Thống kê:** Có đầy đủ Descriptive (Five-number, Skewness, Kurtosis), Inferential (Normality, Homoscedasticity, t-test, ANOVA, Post-hoc, Effect size).
-- [ ] **Hệ thống 4 Mô hình SOTA:** Đã triển khai và so sánh đủ 4 mô hình tiên tiến (GPR với Composite Kernel, BSTS State-Space, CatBoost, Time Series Transformer Encoder) kèm định lượng độ bất định 95% Confidence Interval.
-- [ ] **Tính thực tiễn:** Có chương phân tích sâu về EV Fleet / BESS / Second-life economics và XAI (SHAP).
-- [ ] **Full Report:** Đủ 8 chương, dung lượng $\approx 30$ trang, trích dẫn chuẩn APA/IEEE, hình vẽ sắc nét.
-- [ ] **IEEE Paper:** Định dạng chuẩn 2 cột, độ dài 7-10 trang, bố cục chuẩn hội nghị quốc tế.
-- [ ] **Tính chính trực:** Báo cáo Turnitin $\le 10\%$, kèm biên bản kiểm định AI rõ ràng.
-- [ ] **Bảo vệ:** 4/4 thành viên tự tin trả lời mọi câu hỏi về cả toán thống kê lẫn thuật toán máy học.
+**Notebook:** `notebooks/20_arima.ipynb` · **Review:** Quốc Đạt
+
+| Bước | Làm thế nào | Vì sao (slide) |
+|---|---|---|
+| 5b.1 Chọn chuỗi | Chuỗi `capacity_int_Ah` theo `cycle_valid` của từng pin tier A. Dùng số thứ tự chu kỳ làm trục thời gian, **không dùng ngày**, vì khoảng nghỉ giữa các chu kỳ không đều. | tr. 4 |
+| 5b.2 Vẽ chuỗi | Nhận xét xu hướng giảm, các "răng cưa" sau những lần nghỉ dài, và việc không có tính mùa vụ | tr. 5–6 |
+| 5b.3 Tính dừng | ADF trên chuỗi gốc cho p = 0,53–0,89, tức không dừng. ACF giảm chậm. Lấy **sai phân bậc 1** thì ADF cho p < 0,001. | tr. 11–14, tr. 71 |
+| 5b.4 Nhận dạng mô hình | Vẽ ACF/PACF của chuỗi sai phân. PACF cắt sau lag p thì gợi ý AR(p); ACF cắt sau lag q thì gợi ý MA(q). Thử p, q ∈ {0, 1, 2}, chọn theo AIC. | tr. 47, 65–67 |
+| 5b.5 Ước lượng | `ARIMA(y_train, order=(p, 1, q)).fit()` | tr. 48 |
+| 5b.6 Chẩn đoán | ACF của phần dư không còn đỉnh nào nổi bật. Kiểm định Ljung-Box (mở rộng ngoài slide). Nếu chưa đạt thì quay lại bước 5b.4. | tr. 49 |
+| 5b.7 Dự báo | Kịch bản E1: dự báo cuốn chiếu 1 bước trên 40% cuối. Kịch bản E2: dự báo một mạch từ mốc 60%, kèm khoảng tin cậy. | tr. 49 |
+| 5b.8 ARIMAX | Thêm biến ngoại sinh `log1p(rest_before_h)` (giải thích hiện tượng hồi phục F5) và `Rct_ohm`. So sánh AIC và RMSE với ARIMA. | tr. 52–53 |
+| 5b.9 SARIMA | Xem ACF ở các lag mùa vụ. Không có chu kỳ cố định, nên **kết luận không cần SARIMA**. Ghi điều này vào báo cáo để chứng tỏ đã cân nhắc. | tr. 60–62 |
+
+```python
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.stats.diagnostic import acorr_ljungbox
+fit = ARIMA(y_tr, exog=x_tr, order=(1, 1, 1)).fit()
+acorr_ljungbox(fit.resid, lags=[10])
+fc = fit.get_forecast(steps=len(y_te), exog=x_te)
+fc.summary_frame()      # giá trị dự báo kèm khoảng tin cậy 95%
+```
+
+**Insight cần chỉ ra:**
+- ARIMA là mô hình tuyến tính (tr. 51), nên với chuỗi d = 1 thì dự báo dài hạn sẽ đi theo đường drift. Mô hình không bắt được "đầu gối" suy giảm, và khoảng tin cậy nở rất rộng.
+- **Kết luận:** ARIMA phù hợp cho dự báo ngắn hạn.
+
+**Xong khi:** có bảng mô hình theo từng pin (p, d, q, AIC), hình dự báo kèm khoảng tin cậy, kết quả Ljung-Box, và file `reports/predictions/arima.csv`.
+
+---
+
+### GĐ5c. Minh Vũ: Machine Learning, SVR hoặc Random Forest (Chap 6)
+
+**Notebook:** `notebooks/30_ml.ipynb` · **Review:** Khải Hưng
+
+Làm theo đúng 8 bước SVR ở slide Chap 6, tr. 33:
+
+| Bước | Làm thế nào |
+|---|---|
+| 1. Import | `sklearn.svm.SVR`, `sklearn.ensemble.RandomForestRegressor`, `GroupKFold`, `GridSearchCV` |
+| 2. Load dữ liệu | Dùng `load_split()` của GĐ4 |
+| 3. Tạo đặc trưng và scale | Lag SOH từ 1 đến 5, trung bình trượt 5 chu kỳ, `chg_cc_time_s`, `Re_ohm`, `Rct_ohm`, `T_max_C` của chu kỳ trước, `log1p(rest_before_h)`, dummy nhiệt độ, `I_level_A`, cutoff. Dùng `StandardScaler` **đặt trong Pipeline**, để scaler chỉ fit trên phần train của mỗi fold. |
+| 4. Định nghĩa mô hình | SVR kernel RBF. Lưới siêu tham số: C ∈ {0,1; 1; 10; 100}, ε ∈ {0,001; 0,005; 0,01}, gamma ∈ {'scale'; 0,01; 0,1}. Giải thích ý nghĩa của C và ε theo tr. 31. |
+| 5. Dự báo | Chạy E1 trên tập test. E2 làm bằng dự báo đệ quy: dùng giá trị vừa dự báo làm lag cho bước sau. |
+| 6. Đánh giá | MAE, RMSE, MAPE, R², so với baseline naive |
+| 7. Vẽ train/test | Vẽ giá trị thực và giá trị dự báo cho từng pin test |
+| 8. Vẽ dự báo | Đường dự báo E2 và mốc SOH 0,8 |
+
+```python
+from sklearn.model_selection import GroupKFold, GridSearchCV
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVR
+pipe = make_pipeline(StandardScaler(), SVR(kernel="rbf"))
+gs = GridSearchCV(pipe, {"svr__C": [0.1, 1, 10, 100], "svr__epsilon": [0.001, 0.005, 0.01]},
+                  cv=GroupKFold(4), scoring="neg_root_mean_squared_error")
+gs.fit(X_tr, y_tr, groups=g_tr)
+```
+
+**Random Forest:**
+- Chạy song song để có **feature importance**. Ưu tiên permutation importance trên tập test.
+- **Đối chiếu với các hệ số hồi quy của Quốc Đạt.** Nếu hai cách cùng chỉ ra Rct và nhiệt độ là quan trọng thì kết luận vững hơn.
+
+**Isolation Forest:** xem bước 1.5 ở GĐ1.
+
+**Xong khi:** có bảng siêu tham số tốt nhất, bảng metric, hình feature importance, và file `reports/predictions/svr.csv` (cùng `rf.csv` nếu có).
+
+---
+
+### GĐ5d. Khải Hưng: Deep Learning, LSTM / GRU (Chap 6)
+
+**Notebook:** `notebooks/40_dl.ipynb` · **Review:** Minh Vũ
+
+| Bước | Làm thế nào | Vì sao (slide) |
+|---|---|---|
+| 5d.1 Tạo chuỗi | Cửa sổ trượt dài 10 chu kỳ, dùng cùng bộ đặc trưng với GĐ5c, để dự báo SOH chu kỳ kế tiếp. **Không cho cửa sổ vượt qua ranh giới giữa hai pin.** | tr. 36–38 (sequence modeling) |
+| 5d.2 Kiến trúc | GRU 1 lớp, 32 đơn vị, dropout 0,2, Dense(1). So sánh với LSTM cùng kích thước. | tr. 57–66. GRU ít tham số hơn, nhanh hơn, phù hợp dữ liệu nhỏ (tr. 63). |
+| 5d.3 Huấn luyện | Adam, loss MSE, early stopping với patience 20. Tập validation là một pin train được giữ lại. Dùng seed 42; chạy 5 seed khác nhau và báo cáo trung bình ± độ lệch chuẩn. | tr. 62 (BPTT) |
+| 5d.4 Đánh giá | Kịch bản E1 và E2 (E2 dự báo đệ quy), so với baseline naive, SVR và ARIMA | GĐ4 |
+| 5d.5 Diễn giải trung thực | Chỉ có khoảng 1.500 dòng tier A. Bảng so sánh ở tr. 13 nói DL cần nhiều dữ liệu. Nếu GRU không thắng SVR thì **đó vẫn là một kết luận có giá trị**. | tr. 13–14 |
+
+```python
+import torch.nn as nn
+class GRUReg(nn.Module):
+    def __init__(self, n_feat, h=32):
+        super().__init__()
+        self.gru = nn.GRU(n_feat, h, batch_first=True)
+        self.drop = nn.Dropout(0.2)
+        self.out = nn.Linear(h, 1)
+    def forward(self, x):                  # x: (batch, 10, n_feat)
+        _, hT = self.gru(x)
+        return self.out(self.drop(hT[-1])).squeeze(-1)
+```
+
+**Xong khi:** có learning curve, bảng metric trung bình trên 5 seed, và file `reports/predictions/gru.csv` (cùng `lstm.csv`).
+
+---
+
+## GĐ6. SEM / Path analysis (Chap 7) ⏳: chỉ bắt đầu sau khi học Chap 7
+
+- **Ai:** Quốc Đạt (R), Tiến Hưng (hỗ trợ).
+- **Notebook:** `notebooks/50_sem.ipynb`.
+
+**Việc có thể làm ngay:**
+- Vẽ **sơ đồ giả thuyết**: Điều kiện vận hành (`ambient_C`, `I_level_A`, `discharge_cutoff_V`) tác động lên Trở kháng (`Re_ohm`, `Rct_ohm`), rồi Trở kháng tác động lên `soh`. Thêm các đường tác động trực tiếp từ điều kiện vận hành lên `soh`, và `cycle_valid` làm biến kiểm soát.
+- Chuẩn bị dữ liệu: chỉ lấy các chu kỳ có lần đo EIS mới (Re/Rct thay đổi so với dòng trước), trên tier A/B.
+
+**Sau khi học Chap 7:**
+- Chạy path analysis bằng `semopy` (Python) hoặc `lavaan` (R).
+- Báo cáo các chỉ số phù hợp mô hình (RMSEA, CFI, TLI), hệ số đường dẫn và hiệu ứng gián tiếp (mediation).
+- Dữ liệu chỉ có 2–3 chỉ báo cho mỗi khái niệm, nên **dùng biến quan sát** thay vì biến tiềm ẩn.
+- Ghi rõ hạn chế: các quan sát trong cùng một pin phụ thuộc nhau. Có thể chạy thêm trên dữ liệu ở mức pin như kiểm tra độ vững.
+
+**Xong khi:** có sơ đồ đường dẫn kèm hệ số, bảng chỉ số phù hợp, và đoạn diễn giải "x% tác động của nhiệt độ lên SOH đi qua Rct".
+
+---
+
+## GĐ7. So sánh mô hình và tổng hợp ⏳
+
+- **Ai:** Khải Hưng (R), cả nhóm.
+- **Notebook:** `notebooks/60_compare.ipynb`. Notebook này đọc toàn bộ `reports/predictions/*.csv`.
+
+**Bảng so sánh chính** (đưa vào cả báo cáo và paper):
+
+| Mô hình | MAE | RMSE | MAPE | R² | Sai số RUL (chu kỳ) | Giải thích được? | Khoảng dự báo? | Thời gian train |
+|---|---|---|---|---|---|---|---|---|
+| Naive | | | | | | – | Không | 0 |
+| Hồi quy log-linear | | | | | | Cao | Có | |
+| ARIMA / ARIMAX | | | | | | Trung bình | Có | |
+| SVR / RF | | | | | | Trung bình | Không | |
+| GRU / LSTM | | | | | | Thấp | Không | |
+
+**Thêm:** sai số tách theo từng pin test (tức theo từng điều kiện vận hành), để biết mô hình nào yếu ở điều kiện nào.
+
+**Kết luận theo từng RQ:** mỗi RQ trả lời bằng 2–3 câu, mỗi câu đều có con số kèm theo.
+
+---
+
+## GĐ8. Chuyển kết quả thành khuyến nghị ⏳
+
+- **Ai:** Khải Hưng (R), mỗi người đóng góp phần insight từ mô hình của mình.
+- **Quy tắc:** **mỗi khuyến nghị phải truy được về một bảng hoặc một hình**. Trình bày theo khung:
+
+| Insight | Bằng chứng (bảng/hình) | Khuyến nghị | Bên liên quan | Mức tin cậy |
+|---|---|---|---|---|
+| Ở 43°C/4 A pin suy giảm nhanh hơn ở 24°C/4 A: khoảng 1,4 lần nếu tính trên 25 chu kỳ đầu, khoảng 3,4 lần nếu tính trên toàn chuỗi | GĐ3 T1, `fig1` | Bảo hành phân tầng theo khí hậu; bắt buộc có hệ thống làm mát cho pack | Hãng xe, đơn vị bảo hành | Trung bình (n = 4 so với 2) |
+| Ở 4°C với tải 4 A, pin gần như không xả được (cutoff ≥ 2,5 V) | F3, `fig4` | Sưởi ấm pin trước khi vận hành tải nặng trong trời lạnh; giảm tải khi pin lạnh | Đội xe, drone, người dùng | Cao (hiệu ứng rất lớn) |
+| Thời gian pha CC khi sạc tương quan 0,86 với SOH | F7, mô hình của Minh Vũ | BMS ước lượng SOH ngay khi sạc, không cần xả kiểm tra | Nhà vận hành đội xe | Cao trong G1 |
+| Dung lượng hồi lại tạm thời sau khi nghỉ dài | F5, `fig3` | Không kết luận "pin đã hồi phục" chỉ từ một lần đo sau khi nghỉ; đo lại SOH sau vài chu kỳ | Bộ phận bảo hành, kiểm định pin cũ | Cao |
+| Thời điểm chạm SOH 0,8 dự báo được kèm khoảng tin cậy | GĐ5 E2 | Lập lịch thay pin chủ động; kiểm tra top 10% pin rủi ro trước (lift) | Đội xe | Tùy kết quả mô hình |
+
+**Chính sách bảo hành:**
+- Lấy `cycles_to_soh80` theo từng điều kiện, rồi lấy phân vị thấp (gọi là "B10 life") làm mức bảo hành an toàn.
+- Quy ra tiền bằng **giả định có trích nguồn**, ví dụ giá pack $/kWh từ báo cáo ngành. Làm phân tích độ nhạy ±30%.
+
+**Người dùng cuối:**
+- Chỉ khuyến nghị những gì dữ liệu cho phép: nhiệt độ vận hành, mức tải, độ sâu xả (qua cutoff), thời gian nghỉ.
+- **Không đưa ra khuyến nghị về sạc nhanh**, vì dataset sạc cố định CC 1,5 A.
+
+---
+
+## GĐ9. Viết các deliverable ⏳
+
+Phân công chi tiết theo chương nằm ở [WBS.md](WBS.md). Phần dưới đây mô tả **cách viết**.
+
+### 9.1 Full Report (~30 trang), theo 8 mục của đề cương
+
+| Chương | Số trang | Nội dung chính | Lấy từ |
+|---|---|---|---|
+| 1. Introduction | 3 | Bối cảnh xe điện và lưu trữ năng lượng, chi phí pin; mục tiêu; RQ1–RQ6; đóng góp | Go.md §1 |
+| 2. Literature Review | 4 | SOH/RUL prognostics; các nghiên cứu dùng dataset NASA PCoE; yếu tố gây lão hóa (nhiệt độ, dòng xả, độ sâu xả); analytics cho bảo hành và đội xe; khoảng trống nghiên cứu | 15–25 nguồn |
+| 3. Research Methodology | 6 | Mô tả dataset và tiền xử lý (Introduction_of_dataset.md); công thức và giả định của từng phương pháp | GĐ1, GĐ4 |
+| 4. Implementation & Experiments | 7 | Workflow, code có giải thích, kiểm định giả định, các hình (histogram, boxplot, scatter, SEM path, dự báo) | GĐ2–GĐ6 |
+| 5. Results & Discussion | 6 | Kết quả theo thứ tự Descriptive → Inferential → Regression → SEM → Forecasting → ML/DL; bảng so sánh; ý nghĩa thực tế | GĐ7, GĐ8 |
+| 6. Conclusion & Recommendations | 2 | Tóm tắt phát hiện, khuyến nghị, hạn chế, hướng phát triển (Explainable AI, Ethical AI) | GĐ8; Mục 10 của Introduction_of_dataset.md |
+| 7. References | 1–2 | Định dạng IEEE hoặc APA | Zotero chung của nhóm |
+| 8. Appendix | – | Link GitHub và video demo, ảnh Turnitin, ảnh kiểm tra AI | GĐ10 |
+
+**Quy tắc viết:**
+- Mọi con số trong báo cáo phải lấy từ notebook hoặc script, **không gõ tay**.
+- Công thức lấy theo slide và trích dẫn các sách tham khảo ở Chap 0, tr. 7 (Groebner; Evans; Bruce & Gedeck; Nielsen).
+- Mỗi hình có caption gồm: hình cho thấy điều gì, và rút ra kết luận gì.
+
+### 9.2 IEEE Paper (7–10 trang)
+- Dùng template IEEE Conference trên Overleaf, định dạng hai cột.
+- Rút gọn từ report: Abstract (khoảng 200 từ), Keywords, Introduction, Related Work, Methodology, Results, Discussion, Conclusion, References.
+- Chỉ giữ những gì mạnh nhất: 1 bảng kiểm định, 1 bảng hệ số hồi quy, 1 bảng so sánh mô hình, và 4 hình (`fig1`, `fig2`, hình dự báo, hình SEM).
+
+### 9.3 Slides (15–20 trang)
+- Kể theo mạch Descriptive → Prescriptive. Mỗi slide một ý, tiêu đề là chính kết luận.
+- Ví dụ tiêu đề: "Lạnh và tải nặng làm pin gần như không xả được". Con số trong tiêu đề phải lấy từ kết quả kiểm định cuối cùng.
+
+### 9.4 Demo video (5–10 phút)
+- **Kịch bản:**
+  1. Bài toán (30 giây).
+  2. Chạy pipeline `build → clean → eda` (1 phút).
+  3. Dạo qua các hình chính (2 phút).
+  4. Chạy notebook so sánh mô hình (2 phút).
+  5. Khuyến nghị (1 phút).
+- Có thể làm thêm một app Streamlit nhỏ: chọn pin, xem SOH thực tế, SOH dự báo và cảnh báo.
+
+### 9.5 GitHub
+- README có phần chạy lại từ đầu: `pip install -r requirements.txt`, tải dataset vào `data/nasa_pcoe/`, chạy 3 script và các notebook theo thứ tự số.
+- Không commit dữ liệu.
+- Đổi tên repo theo quy ước `STAT3013.QXX_GroupYY`.
+
+---
+
+## GĐ10. Kiểm tra, tập dượt và nộp bài ⏳
+
+### 10.1 Turnitin ≤ 10% và kiểm tra AI
+- Mỗi người tự viết phần của mình. Diễn giải lại các định nghĩa thay vì chép. Trích dẫn đầy đủ.
+- Nộp thử bản nháp lên Turnitin **trước hạn ít nhất 3 ngày**.
+- **Kiểm tra AI:** chụp ảnh kết quả từ Grammarly, Quillbot hoặc công cụ tương tự.
+  - Viết một trang giải trình: phần nào có dùng AI hỗ trợ (ví dụ debug code, sửa ngữ pháp) và đã kiểm chứng như thế nào.
+  - Đề cương ghi rõ: "AI-generated content must be checked and explained".
+
+### 10.2 Tập dượt bảo vệ
+Mỗi người phải trả lời được mọi câu dưới đây, không chỉ câu về phần mình.
+
+| Câu hỏi | Ý chính của câu trả lời |
+|---|---|
+| Vì sao dùng t mà không dùng z? | Mỗi nhóm có n < 30 pin và σ chưa biết (Chap 2, tr. 8) |
+| Vì sao đơn vị quan sát là pin? | Các chu kỳ trong một pin tự tương quan tới 0,93, vi phạm giả định độc lập |
+| Vì sao không chia train/test ngẫu nhiên? | Gây rò rỉ dữ liệu, R² ảo khoảng 0,99 |
+| Vì sao không làm two-way ANOVA? | Nhiều ô không có pin nào, cỡ mẫu không bằng nhau |
+| Cột `Capacity` gốc có vấn đề gì? | Là dung lượng đến 2,7 V; ở 4°C/4 A gây ra giá trị thấp giả tạo |
+| Vì sao chọn d = 1? | ADF: chuỗi gốc p > 0,5, chuỗi sai phân p < 0,001 |
+| VIF là gì, vì sao không đưa Re và Rct cùng lúc? | r = 0,97, gây đa cộng tuyến (Chap 3, tr. 41) |
+| Vì sao GRU không thắng? (nếu đúng như vậy) | Dữ liệu nhỏ khoảng 1.500 dòng (Chap 6, tr. 13) |
+| Khuyến nghị về sạc pin dựa trên gì? | Dataset không có dữ liệu sạc nhanh; chỉ nói về nhiệt độ, tải và độ sâu xả |
+
+### 10.3 Checklist nộp bài
+- [ ] Full Report (PDF), nộp trên Moodle
+- [ ] IEEE Paper (PDF), nộp trên Moodle
+- [ ] Slides, nộp trên Moodle
+- [ ] Link GitHub (đã đổi tên repo `STAT3013.QXX_GroupYY`)
+- [ ] Link demo video
+- [ ] Ảnh Turnitin ≤ 10%
+- [ ] Ảnh kiểm tra AI và trang giải trình
+
+---
+
+## 11. Rủi ro và cách xử lý
+
+| Rủi ro | Khả năng | Ảnh hưởng | Cách xử lý |
+|---|---|---|---|
+| Kiểm định không có ý nghĩa do quá ít pin | Cao | Trung bình | Báo cáo khoảng tin cậy và effect size; nêu rõ trong phần Limitations; không nói quá kết luận |
+| Chap 7 (SEM) được dạy muộn | Trung bình | Trung bình | Chuẩn bị sẵn dữ liệu và sơ đồ; chạy ngay sau buổi học |
+| Mô hình DL hoặc ML không thắng baseline | Trung bình | Thấp | Đây vẫn là kết quả hợp lệ; giải thích bằng kích thước dữ liệu |
+| Bốn mô hình đánh giá khác nhau nên không so sánh được | Trung bình | Cao | Bắt buộc dùng chung giao thức GĐ4 và `src/protocol.py` |
+| Turnitin > 10% | Thấp | Cao | Viết sớm, nộp thử sớm, trích dẫn đúng |
+| Một thành viên chậm tiến độ | Trung bình | Cao | Họp 2 lần mỗi tuần; Leader theo dõi WBS; người review chéo hỗ trợ |
