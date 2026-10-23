@@ -1,1 +1,8 @@
-data/
+# Local data is never committed; only the empty folder skeleton is kept
+data/*
+!data/raw/
+!data/processed/
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
