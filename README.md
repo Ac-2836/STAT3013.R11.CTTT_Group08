@@ -155,3 +155,154 @@ python src/eda_dataset.py
 ## 8. Reference
 
 B. Saha and K. Goebel, "Battery Data Set", NASA Prognostics Data Repository, NASA Ames Research Center, Moffett Field, CA, 2007.
+
+## 9. Getting started for team members
+
+Each member works on their **own branch**. `main` only receives work through reviewed Pull Requests.
+
+| Member | Branch |
+|---|---|
+| Khai Hung | `khai-hung` |
+| Minh Vu | `minh-vu` |
+| Quoc Dat | `quoc-dat` |
+| Tien Hung | `tien-hung` |
+
+### 9.1 Clone the repository
+
+```bash
+git clone https://github.com/Ac-2836/4AnhTai---Statistical-Analytics-.git
+cd 4AnhTai---Statistical-Analytics-
+```
+
+### 9.2 Check the available branches
+
+```bash
+git fetch origin
+git branch -a
+```
+
+The list should contain `remotes/origin/khai-hung`, `remotes/origin/minh-vu`, `remotes/origin/quoc-dat` and `remotes/origin/tien-hung`. If one is missing, run `git fetch origin` again or contact the leader.
+
+### 9.3 Switch to your own branch
+
+Replace `minh-vu` with your branch name from the table above:
+
+```bash
+git switch minh-vu
+```
+
+Git creates the local branch and links it to `origin/minh-vu` automatically.
+
+### 9.4 Verify you are on the right branch
+
+```bash
+git branch --show-current
+git status
+```
+
+- The first command must print **your** branch name.
+- `git status` must say `Your branch is up to date with 'origin/<your-branch>'`.
+
+Check this every time before you start working. Committing on the wrong branch is the most common mistake.
+
+### 9.5 Set up the environment and data
+
+```bash
+pip install -r requirements.txt
+```
+
+Download the raw dataset from the Google Drive link in Section 3 (also in `data/raw/README.md`) and put the files in `data/raw/`. The `data/` folder is git-ignored, so data files are never committed.
+
+### 9.6 Daily workflow
+
+1. Get the latest changes of your branch before you start:
+   ```bash
+   git pull
+   ```
+2. Bring in new work merged into `main` by others:
+   ```bash
+   git fetch origin
+   git merge origin/main
+   ```
+3. Do your work. Record what you did, why, and the results in **your own section** of [`docs/Work_log.md`](docs/Work_log.md), following the NOTICE in that file.
+4. Stage only the files you changed, by name. Avoid `git add .`:
+   ```bash
+   git add path/to/file1 path/to/file2
+   git commit -m "short description of the change"
+   git push
+   ```
+5. When a piece of work is finished, open a **Pull Request** from your branch into `main` on GitHub and ask your review partner (see `docs/WBS.md`) to review it. The leader merges after approval.
+
+### 9.7 Rules
+
+- Never commit directly to `main`.
+- Never commit anything inside `data/`.
+- Only edit your own section of `docs/Work_log.md`, to avoid merge conflicts.
+- Every number in the report must come from code or a notebook committed in this repository.
+
+## 10. Commit rules
+
+These rules are **mandatory** for every member. They keep the history readable, avoid merge conflicts, and make it possible to trace every number in the report back to the code that produced it.
+
+### 10.1 Required workflow for every change
+
+1. **Be on your own branch.** Run `git branch --show-current` and check the name (Section 9.4).
+2. **Sync first.** `git pull`, then `git fetch origin` and `git merge origin/main`.
+3. **Make one logical change.** One commit = one purpose (for example "add ADF test", not "ADF test + fix figure + update README").
+4. **Run it.** Scripts must run without errors; notebooks must run top to bottom (Restart & Run All).
+5. **Log it.** Add an entry to your section of `docs/Work_log.md` for any analysis step, decision or result.
+6. **Stage by name.** `git add path/to/file`. Never `git add .` or `git add -A`. Check with `git status` before committing.
+7. **Write the message** using the format and table below.
+8. **Push** to your own branch: `git push`.
+9. **Open a Pull Request** into `main` when the piece of work is complete. Your review partner reviews it; the leader merges it.
+10. **After a merge into `main`**, every member runs `git fetch origin` and `git merge origin/main` on their branch.
+
+### 10.2 Commit message format
+
+```
+<type>(<scope>): <summary>
+```
+
+- **type**: one value from the table in 10.3.
+- **scope**: the part of the project the change touches (see 10.4).
+- **summary**: in English, imperative mood ("add", not "added"), lowercase, no full stop at the end, at most 72 characters.
+- Optional body after one blank line: explain **why**, not what.
+- Do **not** add AI attribution lines (for example `Co-Authored-By: <AI tool>`).
+
+### 10.3 Commit types
+
+| Type | Use when you… | Example |
+|---|---|---|
+| `feat` | add a new analysis, model, test or script | `feat(arima): add ARIMAX with rest-time regressor` |
+| `fix` | fix a bug or a wrong result | `fix(preprocess): use preceding charge only in join` |
+| `data` | change data processing rules or thresholds (code only, never data files) | `data(preprocess): exclude G8 cells` |
+| `fig` | add or update figures | `fig(eda): add SOH curves by ambient temperature` |
+| `report` | write or edit report, paper or slide content | `report(paper): draft methodology section` |
+| `docs` | update documentation: README, Work log, WBS, plans | `docs(worklog): add preprocessing entry` |
+| `refactor` | restructure code without changing results | `refactor(ml): move feature building into a function` |
+| `test` | add or fix checks and assertions | `test(preprocess): assert SOH within plausible range` |
+| `chore` | change setup: dependencies, `.gitignore`, folders | `chore(repo): add scikit-learn to requirements` |
+
+### 10.4 Scopes
+
+| Scope | Covers |
+|---|---|
+| `preprocess` | Parsing, joining, cleaning, SOH computation |
+| `eda` | Descriptive statistics and exploratory figures |
+| `inference` | Confidence intervals, t-test, ANOVA, chi-square |
+| `regression` | Linear and logistic regression |
+| `arima` | ARIMA / ARIMAX |
+| `ml` | SVR, Random Forest, Isolation Forest |
+| `dl` | GRU / LSTM |
+| `sem` | SEM / path analysis |
+| `compare` | Model comparison |
+| `report`, `paper`, `slides` | The three written deliverables |
+| `worklog`, `wbs`, `readme` | Team documents |
+| `repo` | Repository setup |
+
+### 10.5 Never
+
+- Commit files inside `data/` or any raw or processed dataset.
+- Commit directly to `main`, or push to another member's branch.
+- Rewrite shared history (`git push --force`, `git commit --amend` on pushed commits) without the leader's agreement.
+- Commit numbers, tables or figures that were typed by hand instead of produced by committed code.
