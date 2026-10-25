@@ -81,8 +81,8 @@ Toàn bộ đồ án đi theo mạch dưới đây. Mạch này cũng khớp v�
 **0.1 Đề tài:** thầy đã duyệt hướng *"chuyển thành bài toán nghiên cứu để rút ra insight về tuổi thọ pin cho doanh nghiệp"*.
 
 **0.2 Repo:**
-- Repo hiện tại: `Ac-2836/4AnhTai---Statistical-Analytics-`.
-- ⚠ Trước khi nộp phải đổi tên thành **`STAT3013.R11.CTTT_Group08`**, theo quy ước `STAT3013.QXX_GroupYY` (Phần C của đề cương). Leader làm việc này, dùng mục Settings của GitHub.
+- Repo hiện tại: `Ac-2836/STAT3013.R11.CTTT_Group08` (đã đổi tên ngày 26/10/2026; tên cũ `4AnhTai---Statistical-Analytics-`).
+- ✅ Tên repo đã theo đúng quy ước `STAT3013.QXX_GroupYY` của đề cương (Phần C).
 
 **0.3 Cấu trúc thư mục thống nhất:**
 ```

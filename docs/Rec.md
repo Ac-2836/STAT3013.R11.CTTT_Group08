@@ -12,7 +12,7 @@
 |---|---|---|
 | Lớp | **STAT3013.R11.CTTT** | 26/10/2026 |
 | Nhóm | **Group 08** (tên nhóm: 4AnhTai) | 26/10/2026 |
-| Tên repo GitHub khi nộp | **`STAT3013.R11.CTTT_Group08`** (theo quy ước `STAT3013.QXX_GroupYY` của đề cương) | 26/10/2026 |
+| Tên repo GitHub | **`STAT3013.R11.CTTT_Group08`** (theo quy ước `STAT3013.QXX_GroupYY` của đề cương). ✅ Đã đổi trên GitHub ngày 26/10/2026. | 26/10/2026 |
 | Thành viên | Khải Hưng (Leader, DL), Quốc Đạt (thống kê truyền thống), Tiến Hưng (thống kê truyền thống), Minh Vũ (ML) | 24/10/2026 |
 | Ngôn ngữ | Nội dung bài làm (report, paper, slides, notebook, code, README) bằng **tiếng Anh**. File quản lý và giao tiếp nội bộ (Go.md, WBS.md, Rec.md, Work_log.md) bằng **tiếng Việt**. | 24/10/2026 |
 | Đề tài | Thầy đã duyệt: chuyển thành bài toán nghiên cứu để rút ra insight về tuổi thọ pin cho doanh nghiệp | 23/10/2026 |

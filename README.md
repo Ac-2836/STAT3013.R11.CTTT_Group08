@@ -179,8 +179,8 @@ Each member works on their **own branch**. `main` only receives work through rev
 ### 9.1 Clone the repository
 
 ```bash
-git clone https://github.com/Ac-2836/4AnhTai---Statistical-Analytics-.git
-cd 4AnhTai---Statistical-Analytics-
+git clone https://github.com/Ac-2836/STAT3013.R11.CTTT_Group08.git
+cd STAT3013.R11.CTTT_Group08
 ```
 
 ### 9.2 Check the available branches
