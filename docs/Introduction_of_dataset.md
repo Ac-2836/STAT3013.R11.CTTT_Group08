@@ -1,9 +1,9 @@
 # Introduction of Dataset: NASA PCoE Li-ion Battery Aging Dataset
 
 > **Đề tài:** Statistical and Machine Learning-Based Modeling of Lithium-Ion Battery Degradation and State-of-Health Prognostics under Variable Operating Conditions
-> **Môn:** STAT3013 (Intermediate Statistical Analysis)
-> **Nhóm:** 4AnhTai (Khải Hưng – Leader, Quốc Đạt, Tiến Hưng, Minh Vũ)
-> **Tài liệu liên quan:** [Go.md](Go.md) (mô phỏng triển khai từng bước) · [WBS.md](WBS.md) (phân công công việc)
+> **Môn:** STAT3013 (Intermediate Statistical Analysis), lớp STAT3013.R11.CTTT
+> **Nhóm:** Group 08, 4AnhTai (Khải Hưng – Leader, Quốc Đạt, Tiến Hưng, Minh Vũ)
+> **Tài liệu liên quan:** [Rec.md](Rec.md) (các quyết định đã chốt) · [Go.md](Go.md) (mô phỏng triển khai từng bước) · [WBS.md](WBS.md) (phân công công việc)
 >
 > Mọi con số trong tài liệu này được tính lại trực tiếp từ 34 file `.mat` bằng pipeline trong `src/`. Không lấy số liệu từ README gốc khi chưa kiểm chứng. Chạy lại toàn bộ bằng:
 > ```bash
@@ -362,10 +362,10 @@ Các nhận xét dưới đây **là giả thuyết, sẽ kiểm định ở Cha
 |---|---|---|---|
 | **Quốc Đạt** (thống kê truyền thống) | **Hồi quy bội log-linear có tương tác** (Chap 3) | Biến phụ thuộc ln(soh). Biến giải thích: cycle_valid, dummy nhiệt độ (k−1), I_level_A, cutoff, các tương tác cycle×dummy. Kiểm tra VIF vì Re/Rct có tương quan 0,97. Kiểm tra residual plot. Thêm phiên bản 2 bước trên `battery_fade.csv`. | Mỗi yếu tố làm SOH thay đổi bao nhiêu % mỗi chu kỳ |
 | **Tiến Hưng** (thống kê truyền thống) | **ARIMA / ARIMAX** (Chap 5) | Chuỗi `capacity_int_Ah` theo `cycle_valid` của từng pin tier A. Dùng d = 1 (ADF đã xác nhận). Biến ngoại sinh: `rest_before_h` để giải thích F5, `Rct_ohm`. Không cần SARIMA vì không có tính mùa vụ cố định. | Dự báo SOH ngắn hạn, thời điểm chạm 80%, giá trị của biến ngoại sinh |
-| **Minh Vũ** (ML) | **SVR hoặc Random Forest** (Chap 6) | Đặc trưng: SOH từ lag 1 đến lag 5, rolling mean, `chg_cc_time_s`, Re, Rct, `T_max` của chu kỳ trước, điều kiện vận hành, `rest_before_h`. Scale bằng z-score, chỉ fit trên train. | Dự báo SOH chu kỳ kế tiếp. Feature importance để đối chiếu với kết quả hồi quy của Quốc Đạt. |
-| **Khải Hưng** (DL, Leader) | **LSTM / GRU** (Chap 6) | Đầu vào là cửa sổ 10 chu kỳ (cùng bộ đặc trưng với Người 3), đầu ra là SOH chu kỳ kế. Ưu tiên GRU vì ít tham số. Dùng early stopping. Chỉ có khoảng 1.500 dòng tier A, nên báo cáo trung thực nếu mô hình không thắng ML (Chap 6 tr. 13). | ML và DL có khác biệt gì trên dữ liệu nhỏ |
+| **Minh Vũ** (ML) | **SVR** (Chap 6) | Đặc trưng: SOH từ lag 1 đến lag 5, rolling mean, `chg_cc_time_s`, Re, Rct, `T_max` của chu kỳ trước, điều kiện vận hành, `rest_before_h`. Scale bằng z-score, chỉ fit trên train. | Dự báo SOH chu kỳ kế tiếp. Permutation importance để đối chiếu với kết quả hồi quy của Quốc Đạt. |
+| **Khải Hưng** (DL, Leader) | **LSTM** (Chap 6) | Đầu vào là cửa sổ 10 chu kỳ (cùng bộ đặc trưng với SVR), đầu ra là SOH chu kỳ kế. Mô hình nhỏ (1 lớp, 32 đơn vị), dùng early stopping. Chỉ có khoảng 1.500 dòng tier A, nên báo cáo trung thực nếu mô hình không thắng ML (Chap 6 tr. 13). | ML và DL có khác biệt gì trên dữ liệu nhỏ |
 
-**Mở rộng tùy chọn (Quốc Đạt):** hồi quy logistic (Chap 4) với nhãn "SOH < 0,8 trong 20 chu kỳ tới". Đánh giá bằng confusion matrix và ROC/AUC, dùng lift cho câu chuyện quản lý đội xe.
+**Sensitivity của cảnh báo EOL (Khải Hưng, giai đoạn so sánh mô hình):** từ dự báo của mỗi mô hình, suy ra cảnh báo "chạm SOH 0,8 trong 20 chu kỳ tới (có/không)", rồi tính sensitivity, specificity và confusion matrix theo Chap 4. Không fit thêm mô hình logistic. Chi tiết ở [Rec.md](Rec.md) mục 6.
 
 ---
 

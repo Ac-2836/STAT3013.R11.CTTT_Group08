@@ -1,8 +1,9 @@
 # WBS: Phân công công việc đồ án STAT3013
 
 > **Đề tài:** Statistical and Machine Learning-Based Modeling of Lithium-Ion Battery Degradation and State-of-Health Prognostics under Variable Operating Conditions
-> **Nhóm:** 4AnhTai · **Dataset:** NASA PCoE Battery Aging. Xem [Introduction_of_dataset.md](Introduction_of_dataset.md).
+> **Lớp:** STAT3013.R11.CTTT · **Nhóm:** Group 08 (4AnhTai) · **Dataset:** NASA PCoE Battery Aging. Xem [Introduction_of_dataset.md](Introduction_of_dataset.md).
 > **Kế hoạch chi tiết từng bước:** [Go.md](Go.md). Các mã GĐx trong tài liệu này trỏ tới giai đoạn tương ứng trong Go.md.
+> **Các quyết định đã chốt:** [Rec.md](Rec.md). Khi mâu thuẫn, Rec.md là căn cứ đúng.
 > **Thời gian:** 23/10/2026 – 28/11/2026. Hạn nộp chính xác xem trên Moodle.
 
 ---
@@ -26,17 +27,17 @@
 
 | Thành viên | Vai trò | Thuật toán phụ trách (GĐ5) | Chương lý thuyết chính | Lead giai đoạn chung | Review chéo cho | Lead deliverable |
 |---|---|---|---|---|---|---|
-| **Khải Hưng** | **Leader**, Deep Learning | **LSTM / GRU** | Chap 6 (§3–4) | GĐ1 (pipeline dữ liệu), GĐ4 (giao thức), GĐ7 (so sánh), GĐ8 (insight) | Minh Vũ (ML) | Full Report (biên tập tổng), GitHub, nộp bài |
-| **Quốc Đạt** | Mô hình thống kê truyền thống | **Hồi quy bội log-linear** (mở rộng: logistic) và **SEM** | Chap 3, Chap 4, Chap 7 | Literature Review | Tiến Hưng (ARIMA) | IEEE Paper |
+| **Khải Hưng** | **Leader**, Deep Learning | **LSTM** | Chap 4 (metric phân loại), Chap 6 (§3–4) | GĐ1 (tiền xử lý), GĐ4 (giao thức), GĐ7 (so sánh, sensitivity), GĐ8 (insight) | Minh Vũ (ML) | Full Report (biên tập tổng), GitHub, nộp bài |
+| **Quốc Đạt** | Mô hình thống kê truyền thống | **Hồi quy bội log-linear có tương tác** và **SEM** | Chap 3, Chap 7 | Literature Review | Tiến Hưng (ARIMA) | IEEE Paper |
 | **Tiến Hưng** | Thống kê truyền thống | **ARIMA / ARIMAX** | Chap 2, Chap 5 | GĐ3 (thống kê suy diễn), kiểm tra Turnitin/AI | Quốc Đạt (hồi quy) | Kiểm tra chất lượng (QA) và bằng chứng Turnitin/AI |
-| **Minh Vũ** | Machine Learning | **SVR / Random Forest** (cùng Isolation Forest) | Chap 1, Chap 6 (§1–2, §5) | GĐ2 (thống kê mô tả) | Khải Hưng (DL) | Slides, Demo video |
+| **Minh Vũ** | Machine Learning | **SVR** (Isolation Forest chỉ dùng để kiểm tra chéo ở bước tiền xử lý) | Chap 1, Chap 6 (§1–2, §5) | GĐ2 (thống kê mô tả) | Khải Hưng (DL) | Slides, Demo video, Streamlit app |
 
 **Trách nhiệm riêng của Leader (Khải Hưng):**
 - Giữ lịch WBS và cập nhật trạng thái sau mỗi buổi họp.
 - Duy trì pipeline `src/` và `src/protocol.py`.
 - Merge các Pull Request vào `main`.
 - Ghép các phần thành báo cáo cuối.
-- Đổi tên repo theo quy ước `STAT3013.QXX_GroupYY` và nộp bài trên Moodle.
+- Đổi tên repo thành `STAT3013.R11.CTTT_Group08` và nộp bài trên Moodle.
 
 ---
 
@@ -49,16 +50,17 @@ Ký hiệu: **R** = người làm chính · **A** = người chịu trách nhi�
 | Pipeline dữ liệu (`src/`) | **R/A** | C | C | C |
 | Thống kê mô tả | C | C | C | **R** (A: Khải Hưng) |
 | Thống kê suy diễn | C | C | **R** (A: Khải Hưng) | C |
-| Hồi quy và logistic | I | **R** | C (review) | I |
+| Hồi quy bội log-linear | I | **R** | C (review) | I |
 | ARIMA / ARIMAX | I | C (review) | **R** | I |
-| SVR / RF / Isolation Forest | C (review) | I | I | **R** |
-| LSTM / GRU | **R** | I | I | C (review) |
+| SVR (và Isolation Forest kiểm tra dữ liệu) | C (review) | I | I | **R** |
+| LSTM | **R** | I | I | C (review) |
 | SEM | I | **R** | C | I |
 | So sánh mô hình và insight | **R/A** | C | C | C |
 | Full Report (~30 trang) | **R/A** (biên tập) | C | C | C |
 | IEEE Paper (7–10 trang) | A | **R** | C | C |
 | Slides | A | C | C | **R** |
 | Demo video | C | I | I | **R** (A: Khải Hưng) |
+| Streamlit app (ưu tiên thấp) | C | I | I | **R** (A: Khải Hưng) |
 | GitHub (README, cấu trúc repo) | **R/A** | C | C | C |
 | Turnitin ≤ 10% và kiểm tra AI | A | C | **R** | C |
 
@@ -73,8 +75,8 @@ Mỗi chương của môn học được chuyển thành các gói công việc 
 | Mã | Công việc | R | Hỗ trợ | Bắt đầu | Kết thúc | Output | Xong khi |
 |---|---|---|---|---|---|---|---|
 | C1.1 | Phân loại dữ liệu: cấu trúc, panel data, thang đo của từng biến | Minh Vũ | Cả nhóm | 26/10 | 27/10 | Bảng trong Report §3 | Mỗi biến trong từ điển dữ liệu có thang đo kèm lý do |
-| C1.2 | Parse `.mat` thành bảng, gộp và ghép dữ liệu ✅ | Khải Hưng | – | 23/10 | 25/10 | `src/build_dataset.py`, `cycles.csv` | Đã xong |
-| C1.3 | Làm sạch dữ liệu, chia segment, tính SOH, phân tầng pin ✅ | Khải Hưng | – | 23/10 | 25/10 | `src/clean_dataset.py`, `cycles_clean.csv` | Đã xong, chờ review |
+| C1.2 | Parse `.mat` thành bảng, gộp và ghép dữ liệu ⏳ (làm lại từ đầu) | Khải Hưng | – | 23/10 | 25/10 | `src/build_dataset.py`, `cycles.csv` | Chạy được, kết quả ghi vào Work_log |
+| C1.3 | Làm sạch dữ liệu, chia segment, tính SOH, phân tầng pin ⏳ (làm lại từ đầu, theo quyết định ở Rec.md mục 2) | Khải Hưng | – | 23/10 | 25/10 | `src/clean_dataset.py`, `cycles_clean.csv` | Chạy được, đúng các tham số đã chốt, chờ review |
 | C1.4 | Review quy tắc làm sạch (mỗi người một phần, Go.md bước 1.6) | Cả nhóm | – | 26/10 | 27/10 | Biên bản review trong issue GitHub | Cả 4 người đồng ý |
 | C1.5 | Bảng thống kê mô tả ở mức chu kỳ và mức pin, tách theo điều kiện | Minh Vũ | Tiến Hưng | 27/10 | 29/10 | `notebooks/01_descriptive.ipynb` | Có đủ n, mean, median, SD, SE, skewness, kurtosis (đã +3) |
 | C1.6 | Histogram, boxplot, đường SOH, scatter trở kháng | Minh Vũ | Khải Hưng | 27/10 | 29/10 | `reports/figures/` | Mỗi hình có 2–3 câu diễn giải |
@@ -106,15 +108,13 @@ Mỗi chương của môn học được chuyển thành các gói công việc 
 | C3.7 | Đánh giá theo giao thức chung E1/E2, xuất file dự báo | Quốc Đạt | Khải Hưng | 11/11 | 13/11 | `reports/predictions/regression.csv` | Notebook so sánh đọc được file |
 | C3.8 | Viết phần Phương pháp và Kết quả cho hồi quy | Quốc Đạt | Tiến Hưng | 13/11 | 15/11 | Report §3.3, §5.3 | Có công thức, giả định, kết quả |
 
-### Chap 4: Logistic Regression (Quốc Đạt, mở rộng tùy chọn)
+### Chap 4: Metric phân loại cho cảnh báo EOL (Khải Hưng)
+
+> Không làm mô hình logistic (đã loại, xem Rec.md mục 4). Chap 4 chỉ được dùng cho phần **đánh giá**: suy ra cảnh báo EOL từ dự báo của 4 mô hình, để đáp ứng mục "sensitivity" trong yêu cầu so sánh mô hình.
 
 | Mã | Công việc | R | Review | Bắt đầu | Kết thúc | Output | Xong khi |
 |---|---|---|---|---|---|---|---|
-| C4.1 | Tạo nhãn "SOH < 0,8 trong 20 chu kỳ tới"; thử độ nhạy với 10 và 30 chu kỳ | Quốc Đạt | Minh Vũ | 11/11 | 12/11 | `notebooks/11_logistic.ipynb` | Có bảng tỉ lệ y = 1 theo pin |
-| C4.2 | Fit MLE và diễn giải odds ratio | Quốc Đạt | Minh Vũ | 12/11 | 13/11 | Như trên | Có bảng odds ratio kèm CI |
-| C4.3 | Confusion matrix, recall/precision, ROC/AUC, lift ở top 10% | Quốc Đạt | Minh Vũ | 13/11 | 14/11 | Như trên | Có ngưỡng phân loại được chọn theo chi phí |
-
-> Nếu đến 10/11 hồi quy (C3) chưa xong thì **bỏ C4** để ưu tiên C3 và SEM.
+| C4.1 | Từ dự báo của mỗi mô hình, suy ra cảnh báo "chạm SOH 0,8 trong 20 chu kỳ tới (có/không)"; tính sensitivity, specificity và confusion matrix cho cả 4 mô hình | Khải Hưng | Quốc Đạt | 16/11 | 18/11 | `notebooks/60_compare.ipynb` | Có bảng sensitivity/specificity của 4 mô hình, cùng định nghĩa nhãn |
 
 ### Chap 5: Forecasting Model of Time Series (Tiến Hưng)
 
@@ -135,11 +135,11 @@ Mỗi chương của môn học được chuyển thành các gói công việc 
 
 | Mã | Công việc | R | Review | Bắt đầu | Kết thúc | Output | Xong khi |
 |---|---|---|---|---|---|---|---|
-| C6.1 | Isolation Forest kiểm tra chéo các cờ outlier (Go.md bước 1.5) | Minh Vũ | Khải Hưng | 27/10 | 30/10 | `notebooks/31_iforest.ipynb` | Có bảng so khớp Hampel với iForest |
+| C6.1 | Isolation Forest kiểm tra chéo các cờ outlier ở bước tiền xử lý (Go.md bước 1.5; không phải thuật toán modeling) | Minh Vũ | Khải Hưng | 27/10 | 30/10 | `notebooks/31_iforest.ipynb` | Có bảng so khớp Hampel với iForest |
 | C6.2 | Tạo đặc trưng lag và rolling; Pipeline gồm scaler và mô hình | Minh Vũ | Khải Hưng | 03/11 | 05/11 | `notebooks/30_ml.ipynb` | Không có đặc trưng nào nằm trong danh sách cấm |
 | C6.3 | SVR: grid search với GroupKFold theo pin | Minh Vũ | Khải Hưng | 05/11 | 08/11 | Như trên | Có bảng siêu tham số tốt nhất |
-| C6.4 | Random Forest và permutation importance | Minh Vũ | Khải Hưng | 08/11 | 10/11 | Như trên | Có hình importance, đối chiếu với hệ số của C3.4 |
-| C6.5 | Đánh giá E1/E2, so với baseline naive, xuất file | Minh Vũ | Khải Hưng | 10/11 | 13/11 | `reports/predictions/svr.csv`, `rf.csv` | Notebook so sánh đọc được file |
+| C6.4 | Permutation importance cho SVR trên tập test | Minh Vũ | Khải Hưng | 08/11 | 10/11 | Như trên | Có hình importance, đối chiếu với hệ số của C3.4 |
+| C6.5 | Đánh giá E1/E2, so với baseline naive, xuất file | Minh Vũ | Khải Hưng | 10/11 | 13/11 | `reports/predictions/svr.csv` | Notebook so sánh đọc được file |
 | C6.6 | Viết phần Phương pháp và Kết quả cho ML | Minh Vũ | Khải Hưng | 13/11 | 15/11 | Report §3.5, §5.5 | Có 8 bước SVR và kết quả |
 
 **DL: Khải Hưng**
@@ -147,8 +147,8 @@ Mỗi chương của môn học được chuyển thành các gói công việc 
 | Mã | Công việc | R | Review | Bắt đầu | Kết thúc | Output | Xong khi |
 |---|---|---|---|---|---|---|---|
 | C6.7 | Tạo cửa sổ chuỗi dài 10, không cắt qua ranh giới giữa hai pin | Khải Hưng | Minh Vũ | 04/11 | 05/11 | `notebooks/40_dl.ipynb` | Có hàm kiểm tra (assert) về ranh giới pin |
-| C6.8 | GRU và LSTM, early stopping, chạy với 5 seed | Khải Hưng | Minh Vũ | 05/11 | 10/11 | Như trên | Có learning curve, kết quả mean ± SD |
-| C6.9 | Đánh giá E1/E2 (E2 đệ quy), xuất file | Khải Hưng | Minh Vũ | 10/11 | 13/11 | `reports/predictions/gru.csv`, `lstm.csv` | Notebook so sánh đọc được file |
+| C6.8 | LSTM (1 lớp, 32 đơn vị), early stopping, chạy với 5 seed | Khải Hưng | Minh Vũ | 05/11 | 10/11 | Như trên | Có learning curve, kết quả mean ± SD |
+| C6.9 | Đánh giá E1/E2 (E2 đệ quy), xuất file | Khải Hưng | Minh Vũ | 10/11 | 13/11 | `reports/predictions/lstm.csv` | Notebook so sánh đọc được file |
 | C6.10 | Viết phần Phương pháp và Kết quả cho DL | Khải Hưng | Minh Vũ | 13/11 | 15/11 | Report §3.6, §5.6 | Có kiến trúc, quá trình train và diễn giải trung thực |
 
 ### Chap 7: Structural Equation Modeling (Quốc Đạt và Tiến Hưng, sau khi học Chap 7)
@@ -174,15 +174,15 @@ Mỗi chương của môn học được chuyển thành các gói công việc 
 | | Analytics cho bảo hành và đội xe; khoảng trống nghiên cứu | Khải Hưng | Minh Vũ | Paper, báo cáo ngành | 08/11 | 22/11 |
 | **3. Research Methodology** (6 tr.) | §3.1 Dataset và tiền xử lý | Khải Hưng | Minh Vũ | Introduction_of_dataset.md | 06/11 | 22/11 |
 | | §3.2 Thống kê mô tả và suy diễn | Tiến Hưng | Minh Vũ | GĐ2–GĐ3 | 06/11 | 22/11 |
-| | §3.3 Hồi quy (và logistic) | Quốc Đạt | Tiến Hưng | C3, C4 | 15/11 | 22/11 |
+| | §3.3 Hồi quy bội log-linear | Quốc Đạt | Tiến Hưng | C3 | 15/11 | 22/11 |
 | | §3.4 ARIMA / ARIMAX | Tiến Hưng | Quốc Đạt | C5 | 15/11 | 22/11 |
-| | §3.5 SVR / RF / Isolation Forest | Minh Vũ | Khải Hưng | C6.1–C6.6 | 15/11 | 22/11 |
-| | §3.6 LSTM / GRU | Khải Hưng | Minh Vũ | C6.7–C6.10 | 15/11 | 22/11 |
+| | §3.5 SVR | Minh Vũ | Khải Hưng | C6.2–C6.6 | 15/11 | 22/11 |
+| | §3.6 LSTM | Khải Hưng | Minh Vũ | C6.7–C6.10 | 15/11 | 22/11 |
 | | §3.7 SEM | Quốc Đạt | Tiến Hưng | C7 | 19/11 | 22/11 |
 | **4. Implementation & Experiments** (7 tr.) | Workflow, cấu trúc code, kiểm tra giả định, hình | Mỗi người viết phần mô hình của mình; Khải Hưng ghép | Chéo | Notebook | 15/11 | 23/11 |
 | **5. Results & Discussion** (6 tr.) | §5.1 Mô tả · §5.2 Suy diễn | Minh Vũ · Tiến Hưng | Chéo | GĐ2–GĐ3 | 08/11 | 23/11 |
 | | §5.3–§5.7 Kết quả từng mô hình | Người phụ trách mô hình đó | Chéo | GĐ5–GĐ6 | 15/11 (SEM: 19/11) | 23/11 |
-| | §5.8 So sánh mô hình | Khải Hưng | Cả nhóm | GĐ7 | 18/11 | 23/11 |
+| | §5.8 So sánh mô hình (kèm sensitivity của cảnh báo EOL) | Khải Hưng | Cả nhóm | GĐ7, C4.1 | 18/11 | 23/11 |
 | | §5.9 Ý nghĩa thực tế | Khải Hưng | Cả nhóm | GĐ8 | 20/11 | 23/11 |
 | **6. Conclusion & Recommendations** (2 tr.) | Tóm tắt, khuyến nghị, hạn chế, hướng phát triển | Khải Hưng | Quốc Đạt | GĐ8 | 20/11 | 24/11 |
 | **7. References** | Quản lý trích dẫn bằng Zotero, định dạng IEEE | Quốc Đạt | Tiến Hưng | – | liên tục | 24/11 |
@@ -196,7 +196,8 @@ Mỗi chương của môn học được chuyển thành các gói công việc 
 |---|---|---|---|---|---|---|
 | D1 | IEEE Paper 7–10 trang (Overleaf) | Quốc Đạt | Cả nhóm | 19/11 | 25/11 | Đúng template 2 cột, có 4 bảng/hình chính, không quá 10 trang |
 | D2 | Slides 15–20 trang | Minh Vũ | Cả nhóm | 20/11 | 25/11 | Mỗi slide một ý, tiêu đề là kết luận |
-| D3 | Demo video 5–10 phút | Minh Vũ | Khải Hưng | 22/11 | 26/11 | Theo kịch bản ở Go.md §9.4, có link xem được |
+| D3 | Demo video 8–10 phút, mỗi thành viên tự trình bày phần của mình (ưu tiên thấp) | Minh Vũ | Khải Hưng | 22/11 | 26/11 | Theo kịch bản ở Rec.md mục 7, có link xem được |
+| D3b | Streamlit app: chọn pin, xem SOH thực tế và dự báo, cảnh báo EOL (ưu tiên thấp, chỉ làm khi xong phần chính) | Minh Vũ | Khải Hưng | 22/11 | 26/11 | Chạy được bằng `streamlit run`, có link hoặc hướng dẫn chạy |
 | D4 | GitHub: README, đổi tên repo, dọn code | Khải Hưng | Cả nhóm | 20/11 | 26/11 | Người ngoài clone về chạy lại được từ đầu |
 | D5 | Turnitin ≤ 10% | Tiến Hưng | Cả nhóm | 23/11 | 26/11 | Có ảnh chụp kết quả ≤ 10% |
 | D6 | Kiểm tra AI và trang giải trình | Tiến Hưng | Cả nhóm | 23/11 | 26/11 | Có ảnh chụp và một trang giải trình |
@@ -213,15 +214,15 @@ Mỗi chương của môn học được chuyển thành các gói công việc 
 | Thống kê mô tả (C1.5–C1.7) | ■ | | | | |
 | Thống kê suy diễn (C2) | ■ | ■ | | | |
 | Giao thức chung (GĐ4) | | ■ | | | |
-| Hồi quy và logistic: Quốc Đạt | | ■ | ■ | | |
+| Hồi quy log-linear: Quốc Đạt | | ■ | ■ | | |
 | ARIMA/ARIMAX: Tiến Hưng | | ■ | ■ | | |
-| SVR/RF: Minh Vũ (iForest từ T1) | ■ | ■ | ■ | | |
-| GRU/LSTM: Khải Hưng | | ■ | ■ | | |
+| SVR: Minh Vũ (iForest kiểm tra dữ liệu từ T1) | ■ | ■ | ■ | | |
+| LSTM: Khải Hưng | | ■ | ■ | | |
 | SEM: Quốc Đạt và Tiến Hưng | | | ■ (chuẩn bị) | ■ | |
-| So sánh mô hình và insight | | | | ■ | |
+| So sánh mô hình, sensitivity và insight | | | | ■ | |
 | Literature Review | ■ | ■ | | | |
 | Viết report | | ■ (nháp) | ■ (nháp) | ■ | ■ |
-| IEEE paper, slides, video | | | | ■ | ■ |
+| IEEE paper, slides, video, Streamlit | | | | ■ | ■ |
 | Turnitin, kiểm tra AI, tập dượt, nộp bài | | | | | ■ |
 
 **Các mốc kiểm soát (milestone):**
@@ -238,10 +239,10 @@ Mỗi chương của môn học được chuyển thành các gói công việc 
 
 | Thành viên | Phần phân tích | Phần viết | Deliverable lead | Review |
 |---|---|---|---|---|
-| Khải Hưng | Pipeline dữ liệu, giao thức chung, GRU/LSTM, so sánh mô hình, insight | Report Ch1, §3.1, §3.6, §5.8–5.9, Ch6; ghép toàn bộ report | Full Report, GitHub, nộp bài | ML (Minh Vũ) |
-| Quốc Đạt | ANOVA/Tukey, hồi quy, logistic (tùy chọn), SEM | Literature Review §2.1, §3.3, §3.7, §5.3, §5.7, References | IEEE Paper | ARIMA (Tiến Hưng) |
+| Khải Hưng | Pipeline dữ liệu, giao thức chung, LSTM, so sánh mô hình, sensitivity của cảnh báo EOL, insight | Report Ch1, §3.1, §3.6, §5.8–5.9, Ch6; ghép toàn bộ report | Full Report, GitHub, nộp bài | ML (Minh Vũ) |
+| Quốc Đạt | ANOVA/Tukey, hồi quy bội log-linear, SEM | Literature Review §2.1, §3.3, §3.7, §5.3, §5.7, References | IEEE Paper | ARIMA (Tiến Hưng) |
 | Tiến Hưng | CI, F-test, Levene, t-test, two-way ANOVA (lý do không làm), ARIMA/ARIMAX, hỗ trợ SEM | Literature Review §2.2, §3.2, §3.4, §5.2, §5.4, Appendix | Turnitin và kiểm tra AI | Hồi quy (Quốc Đạt) |
-| Minh Vũ | Phân loại dữ liệu, thống kê mô tả, chi-square, Isolation Forest, SVR/RF | Literature Review §2.3, §3.5, §5.1, §5.5 | Slides, Demo video | DL (Khải Hưng) |
+| Minh Vũ | Phân loại dữ liệu, thống kê mô tả, chi-square, Isolation Forest (kiểm tra dữ liệu), SVR | Literature Review §2.3, §3.5, §5.1, §5.5 | Slides, Demo video, Streamlit app | DL (Khải Hưng) |
 
 ---
 
@@ -252,7 +253,7 @@ Mỗi chương của môn học được chuyển thành các gói công việc 
   - Sau đó mỗi người **trình bày lại phần của người mình review**.
 - **Theo dõi công việc:** dùng GitHub Issues, mỗi mã công việc (C1.1, C3.4, D2, …) là một issue. Leader cập nhật bảng trạng thái trong file này sau mỗi buổi họp.
 - **Quy trình code:**
-  1. Làm trên nhánh `feat/<tên>`.
+  1. Làm trên branch mang tên mình (`khai-hung`, `quoc-dat`, `tien-hung`, `minh-vu`), theo quy tắc ở README mục 9–10.
   2. Mở Pull Request.
   3. Người review chéo duyệt.
   4. Leader merge vào `main`.

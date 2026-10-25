@@ -2,15 +2,15 @@
 
 > **Đề tài:** Statistical and Machine Learning-Based Modeling of Lithium-Ion Battery Degradation and State-of-Health Prognostics under Variable Operating Conditions
 > **Dataset:** NASA PCoE Li-ion Battery Aging Dataset. Xem [Introduction_of_dataset.md](Introduction_of_dataset.md).
-> **Phân công chi tiết:** [WBS.md](WBS.md)
-> **Nhóm 4AnhTai:**
+> **Phân công chi tiết:** [WBS.md](WBS.md) · **Các quyết định đã chốt:** [Rec.md](Rec.md) (khi mâu thuẫn, Rec.md là căn cứ đúng)
+> **Lớp STAT3013.R11.CTTT · Group 08 (4AnhTai):**
 
 | Thành viên | Vai trò |
 |---|---|
-| Khải Hưng | Leader, phụ trách Deep Learning |
-| Quốc Đạt | Mô hình thống kê truyền thống: hồi quy bội (cùng với logistic và SEM) |
+| Khải Hưng | Leader, Deep Learning (LSTM), tiền xử lý, giao thức đánh giá, so sánh mô hình |
+| Quốc Đạt | Mô hình thống kê truyền thống: hồi quy bội log-linear và SEM |
 | Tiến Hưng | Thống kê truyền thống: thống kê suy diễn và ARIMA/ARIMAX |
-| Minh Vũ | Machine Learning |
+| Minh Vũ | Machine Learning (SVR), thống kê mô tả |
 
 > **Thời gian:** môn học kéo dài 07/09–28/11/2026. Tài liệu được lập ngày 23/10/2026, khi đã học tới Chap 6. Chap 7 (SEM) chưa học.
 
@@ -42,7 +42,7 @@ Toàn bộ đồ án đi theo mạch dưới đây. Mạch này cũng khớp v�
 |---|---|---|---|
 | Descriptive | Pin suy giảm như thế nào dưới từng điều kiện? | Thống kê mô tả, histogram, boxplot, đường SOH | Chap 1 |
 | Diagnostic | Yếu tố nào làm suy giảm nhanh hơn, và nhanh hơn bao nhiêu? | t-test, F-test, Levene, ANOVA, Tukey, chi-square, hồi quy, SEM | Chap 2, 3, 7 |
-| Predictive | SOH ở các chu kỳ tới là bao nhiêu? Khi nào chạm EOL? | Logistic, ARIMA/ARIMAX, SVR/RF, LSTM/GRU | Chap 4, 5, 6 |
+| Predictive | SOH ở các chu kỳ tới là bao nhiêu? Khi nào chạm EOL? | ARIMA/ARIMAX, SVR, LSTM; sensitivity của cảnh báo EOL suy ra từ dự báo | Chap 4, 5, 6 |
 | Prescriptive | Doanh nghiệp và người dùng nên làm gì? | Chuyển kết quả thành khuyến nghị | Discussion |
 
 ### 1.2 Câu hỏi nghiên cứu (Research Questions)
@@ -52,8 +52,8 @@ Toàn bộ đồ án đi theo mạch dưới đây. Mạch này cũng khớp v�
 | RQ1 | Tốc độ suy giảm SOH có khác nhau có ý nghĩa thống kê giữa các mức nhiệt độ, dòng xả và profile xả không? | Chap 2 | Cả nhóm (lead: Tiến Hưng) |
 | RQ2 | Mỗi yếu tố làm SOH thay đổi bao nhiêu % sau mỗi chu kỳ? | Hồi quy bội log-linear (Chap 3) | Quốc Đạt |
 | RQ3 | Dự báo được dung lượng ngắn hạn tốt đến đâu chỉ từ lịch sử của chính pin đó? Thêm biến ngoại sinh có giúp không? | ARIMA/ARIMAX (Chap 5) | Tiến Hưng |
-| RQ4 | Mô hình ML với đặc trưng sạc và trở kháng dự báo SOH chu kỳ kế tiếp tốt đến đâu? Đặc trưng nào quan trọng nhất? | SVR/RF (Chap 6) | Minh Vũ |
-| RQ5 | Mô hình DL trên chuỗi đặc trưng có hơn ML trên dữ liệu nhỏ không? | LSTM/GRU (Chap 6) | Khải Hưng |
+| RQ4 | Mô hình ML với đặc trưng sạc và trở kháng dự báo SOH chu kỳ kế tiếp tốt đến đâu? Đặc trưng nào quan trọng nhất? | SVR (Chap 6) | Minh Vũ |
+| RQ5 | Mô hình DL trên chuỗi đặc trưng có hơn ML trên dữ liệu nhỏ không? | LSTM (Chap 6) | Khải Hưng |
 | RQ6 | Có phải điều kiện vận hành tác động lên SOH thông qua trở kháng không? | SEM / path analysis (Chap 7) | Quốc Đạt và Tiến Hưng |
 
 ### 1.3 Lịch tổng
@@ -61,7 +61,7 @@ Toàn bộ đồ án đi theo mạch dưới đây. Mạch này cũng khớp v�
 | Giai đoạn | Nội dung | Thời gian | Người phụ trách chính | Trạng thái |
 |---|---|---|---|---|
 | GĐ0 | Chốt đề tài, setup repo và môi trường | trước 23/10 | Khải Hưng | ✅ |
-| GĐ1 | Hiểu dữ liệu, pipeline parse và làm sạch | 23/10–27/10 | Khải Hưng (cả nhóm review) | ✅ pipeline, 🔄 review |
+| GĐ1 | Hiểu dữ liệu, pipeline parse và làm sạch | 23/10–27/10 | Khải Hưng (cả nhóm review) | ⏳ (làm lại từ đầu; các quyết định đã chốt ở Rec.md) |
 | GĐ2 | Thống kê mô tả | 26/10–29/10 | Cả nhóm (lead: Minh Vũ) | ⏳ |
 | GĐ3 | Thống kê suy diễn | 29/10–02/11 | Cả nhóm (lead: Tiến Hưng) | ⏳ |
 | GĐ4 | Chốt giao thức mô hình chung (split, metric, baseline) | 02/11–03/11 | Khải Hưng | ⏳ |
@@ -82,7 +82,7 @@ Toàn bộ đồ án đi theo mạch dưới đây. Mạch này cũng khớp v�
 
 **0.2 Repo:**
 - Repo hiện tại: `Ac-2836/4AnhTai---Statistical-Analytics-`.
-- ⚠ Trước khi nộp phải đổi tên theo đúng quy ước `STAT3013.QXX_GroupYY` (Phần C của đề cương). Leader làm việc này, dùng mục Settings của GitHub.
+- ⚠ Trước khi nộp phải đổi tên thành **`STAT3013.R11.CTTT_Group08`**, theo quy ước `STAT3013.QXX_GroupYY` (Phần C của đề cương). Leader làm việc này, dùng mục Settings của GitHub.
 
 **0.3 Cấu trúc thư mục thống nhất:**
 ```
@@ -99,13 +99,13 @@ docs/                  tài liệu dự án
 **0.4 Quy ước làm việc:**
 - **Python 3.11**, thư viện trong `requirements.txt`. Ai cần thư viện mới (ví dụ `scikit-learn`, `torch`, `semopy`) thì báo Leader để thêm vào file.
 - **Random seed** cố định là 42 ở mọi nơi có yếu tố ngẫu nhiên.
-- **Git:** mỗi người làm trên nhánh riêng (`feat/regression`, `feat/arima`, `feat/ml`, `feat/dl`). Merge vào `main` qua Pull Request, và cần ít nhất một người review.
+- **Git:** mỗi người làm trên branch mang tên mình (`khai-hung`, `quoc-dat`, `tien-hung`, `minh-vu`). Merge vào `main` qua Pull Request, và cần ít nhất một người review. Quy trình chi tiết và quy tắc commit message ở README mục 9–10.
 - **Notebook:** phải chạy được từ đầu đến cuối (Restart & Run All) trước khi commit. Không đọc dữ liệu bằng đường dẫn tuyệt đối trên máy cá nhân.
 - **Họp nhóm:** 2 lần mỗi tuần, khoảng 30 phút. Mỗi người trình bày lại phần của **một người khác**, vì đề cương yêu cầu "All members must understand the entire project".
 
 ---
 
-## GĐ1. Hiểu và chuẩn bị dữ liệu ✅ (pipeline) · 🔄 (review)
+## GĐ1. Hiểu và chuẩn bị dữ liệu ⏳ (làm lại từ đầu)
 
 > Chi tiết đầy đủ ở [Introduction_of_dataset.md](Introduction_of_dataset.md). Mục này mô tả lại **quá trình** đã làm và việc mỗi người cần kiểm tra lại.
 
@@ -339,7 +339,7 @@ model, battery_id, cycle_valid, scenario (E1|E2), y_true, y_pred, y_lower, y_upp
 
 ## GĐ5. Modeling song song ⏳
 
-### GĐ5a. Quốc Đạt: Hồi quy bội (Chap 3), mở rộng logistic (Chap 4)
+### GĐ5a. Quốc Đạt: Hồi quy bội log-linear có tương tác (Chap 3)
 
 **Notebook:** `notebooks/10_regression.ipynb` · **Review:** Tiến Hưng
 
@@ -363,17 +363,6 @@ m = smf.ols("np.log(soh) ~ cycle_valid * C(temp) + cycle_valid * I_level_A + dis
             data=train).fit()
 print(m.summary())       # R², adj R², F-test, t-test và CI của từng hệ số
 ```
-
-**Mở rộng tùy chọn: logistic (Chap 4).**
-- **Nhãn:** y = 1 nếu SOH xuống dưới 0,8 **trong 20 chu kỳ tới**.
-- **Biến dự báo:** Re, Rct, `chg_cc_time_s`, ΔSOH 5 chu kỳ gần nhất, điều kiện vận hành.
-- **Ước lượng:** MLE (tr. 16–19). Diễn giải bằng odds ratio e^b.
-- **Đánh giá:**
-  - Confusion matrix.
-  - Ưu tiên **recall**: bỏ sót một pin sắp hỏng trên drone có thể làm rơi máy.
-  - ROC/AUC.
-  - **Lift ở top 10% rủi ro** (tr. 27): đây là câu chuyện "quản lý đội xe nên kiểm tra pin nào trước".
-- Tỉ lệ y = 1 thấp, nên dùng `class_weight="balanced"`.
 
 **Xong khi:** có bảng hệ số kèm CI, residual plot, bảng VIF, file dự báo, và một đoạn diễn giải có hàm ý kinh doanh.
 
@@ -412,7 +401,7 @@ fc.summary_frame()      # giá trị dự báo kèm khoảng tin cậy 95%
 
 ---
 
-### GĐ5c. Minh Vũ: Machine Learning, SVR hoặc Random Forest (Chap 6)
+### GĐ5c. Minh Vũ: Machine Learning, SVR (Chap 6)
 
 **Notebook:** `notebooks/30_ml.ipynb` · **Review:** Khải Hưng
 
@@ -420,7 +409,7 @@ Làm theo đúng 8 bước SVR ở slide Chap 6, tr. 33:
 
 | Bước | Làm thế nào |
 |---|---|
-| 1. Import | `sklearn.svm.SVR`, `sklearn.ensemble.RandomForestRegressor`, `GroupKFold`, `GridSearchCV` |
+| 1. Import | `sklearn.svm.SVR`, `GroupKFold`, `GridSearchCV`, `sklearn.inspection.permutation_importance` |
 | 2. Load dữ liệu | Dùng `load_split()` của GĐ4 |
 | 3. Tạo đặc trưng và scale | Lag SOH từ 1 đến 5, trung bình trượt 5 chu kỳ, `chg_cc_time_s`, `Re_ohm`, `Rct_ohm`, `T_max_C` của chu kỳ trước, `log1p(rest_before_h)`, dummy nhiệt độ, `I_level_A`, cutoff. Dùng `StandardScaler` **đặt trong Pipeline**, để scaler chỉ fit trên phần train của mỗi fold. |
 | 4. Định nghĩa mô hình | SVR kernel RBF. Lưới siêu tham số: C ∈ {0,1; 1; 10; 100}, ε ∈ {0,001; 0,005; 0,01}, gamma ∈ {'scale'; 0,01; 0,1}. Giải thích ý nghĩa của C và ε theo tr. 31. |
@@ -440,42 +429,42 @@ gs = GridSearchCV(pipe, {"svr__C": [0.1, 1, 10, 100], "svr__epsilon": [0.001, 0.
 gs.fit(X_tr, y_tr, groups=g_tr)
 ```
 
-**Random Forest:**
-- Chạy song song để có **feature importance**. Ưu tiên permutation importance trên tập test.
+**Đặc trưng nào quan trọng (trả lời RQ4):**
+- Tính **permutation importance** của SVR trên tập test: xáo trộn từng đặc trưng và đo RMSE tăng bao nhiêu.
 - **Đối chiếu với các hệ số hồi quy của Quốc Đạt.** Nếu hai cách cùng chỉ ra Rct và nhiệt độ là quan trọng thì kết luận vững hơn.
 
-**Isolation Forest:** xem bước 1.5 ở GĐ1.
+**Isolation Forest:** chỉ là công cụ kiểm tra chéo ở bước tiền xử lý (bước 1.5 ở GĐ1), không phải thuật toán modeling.
 
-**Xong khi:** có bảng siêu tham số tốt nhất, bảng metric, hình feature importance, và file `reports/predictions/svr.csv` (cùng `rf.csv` nếu có).
+**Xong khi:** có bảng siêu tham số tốt nhất, bảng metric, hình permutation importance, và file `reports/predictions/svr.csv`.
 
 ---
 
-### GĐ5d. Khải Hưng: Deep Learning, LSTM / GRU (Chap 6)
+### GĐ5d. Khải Hưng: Deep Learning, LSTM (Chap 6)
 
 **Notebook:** `notebooks/40_dl.ipynb` · **Review:** Minh Vũ
 
 | Bước | Làm thế nào | Vì sao (slide) |
 |---|---|---|
 | 5d.1 Tạo chuỗi | Cửa sổ trượt dài 10 chu kỳ, dùng cùng bộ đặc trưng với GĐ5c, để dự báo SOH chu kỳ kế tiếp. **Không cho cửa sổ vượt qua ranh giới giữa hai pin.** | tr. 36–38 (sequence modeling) |
-| 5d.2 Kiến trúc | GRU 1 lớp, 32 đơn vị, dropout 0,2, Dense(1). So sánh với LSTM cùng kích thước. | tr. 57–66. GRU ít tham số hơn, nhanh hơn, phù hợp dữ liệu nhỏ (tr. 63). |
+| 5d.2 Kiến trúc | LSTM 1 lớp, 32 đơn vị, dropout 0,2, Dense(1). Mô hình nhỏ để bù việc LSTM nhiều tham số trên dữ liệu ít. | tr. 57–62 (3 cổng forget/input/output, forward pass) |
 | 5d.3 Huấn luyện | Adam, loss MSE, early stopping với patience 20. Tập validation là một pin train được giữ lại. Dùng seed 42; chạy 5 seed khác nhau và báo cáo trung bình ± độ lệch chuẩn. | tr. 62 (BPTT) |
 | 5d.4 Đánh giá | Kịch bản E1 và E2 (E2 dự báo đệ quy), so với baseline naive, SVR và ARIMA | GĐ4 |
-| 5d.5 Diễn giải trung thực | Chỉ có khoảng 1.500 dòng tier A. Bảng so sánh ở tr. 13 nói DL cần nhiều dữ liệu. Nếu GRU không thắng SVR thì **đó vẫn là một kết luận có giá trị**. | tr. 13–14 |
+| 5d.5 Diễn giải trung thực | Chỉ có khoảng 1.500 dòng tier A. Bảng so sánh ở tr. 13 nói DL cần nhiều dữ liệu. Nếu LSTM không thắng SVR thì **đó vẫn là một kết luận có giá trị**. | tr. 13–14 |
 
 ```python
 import torch.nn as nn
-class GRUReg(nn.Module):
+class LSTMReg(nn.Module):
     def __init__(self, n_feat, h=32):
         super().__init__()
-        self.gru = nn.GRU(n_feat, h, batch_first=True)
+        self.lstm = nn.LSTM(n_feat, h, batch_first=True)
         self.drop = nn.Dropout(0.2)
         self.out = nn.Linear(h, 1)
     def forward(self, x):                  # x: (batch, 10, n_feat)
-        _, hT = self.gru(x)
+        _, (hT, _) = self.lstm(x)          # LSTM returns (hidden state, cell state)
         return self.out(self.drop(hT[-1])).squeeze(-1)
 ```
 
-**Xong khi:** có learning curve, bảng metric trung bình trên 5 seed, và file `reports/predictions/gru.csv` (cùng `lstm.csv`).
+**Xong khi:** có learning curve, bảng metric trung bình trên 5 seed, và file `reports/predictions/lstm.csv`.
 
 ---
 
@@ -510,10 +499,12 @@ class GRUReg(nn.Module):
 | Naive | | | | | | – | Không | 0 |
 | Hồi quy log-linear | | | | | | Cao | Có | |
 | ARIMA / ARIMAX | | | | | | Trung bình | Có | |
-| SVR / RF | | | | | | Trung bình | Không | |
-| GRU / LSTM | | | | | | Thấp | Không | |
+| SVR | | | | | | Trung bình | Không | |
+| LSTM | | | | | | Thấp | Không | |
 
-**Thêm:** sai số tách theo từng pin test (tức theo từng điều kiện vận hành), để biết mô hình nào yếu ở điều kiện nào.
+**Thêm:**
+- Sai số tách theo từng pin test (tức theo từng điều kiện vận hành), để biết mô hình nào yếu ở điều kiện nào.
+- **Sensitivity của cảnh báo EOL (Chap 4):** từ dự báo của mỗi mô hình, suy ra cảnh báo "pin chạm SOH 0,8 trong 20 chu kỳ tới (có/không)". Tính sensitivity, specificity và confusion matrix cho từng mô hình. Không fit thêm mô hình thứ 5. Đây là phần đáp ứng mục "sensitivity" trong yêu cầu so sánh mô hình của đề cương.
 
 **Kết luận theo từng RQ:** mỗi RQ trả lời bằng 2–3 câu, mỗi câu đều có con số kèm theo.
 
@@ -573,19 +564,26 @@ Phân công chi tiết theo chương nằm ở [WBS.md](WBS.md). Phần dưới 
 - Kể theo mạch Descriptive → Prescriptive. Mỗi slide một ý, tiêu đề là chính kết luận.
 - Ví dụ tiêu đề: "Lạnh và tải nặng làm pin gần như không xả được". Con số trong tiêu đề phải lấy từ kết quả kiểm định cuối cùng.
 
-### 9.4 Demo video (5–10 phút)
-- **Kịch bản:**
-  1. Bài toán (30 giây).
-  2. Chạy pipeline `build → clean → eda` (1 phút).
-  3. Dạo qua các hình chính (2 phút).
-  4. Chạy notebook so sánh mô hình (2 phút).
-  5. Khuyến nghị (1 phút).
-- Có thể làm thêm một app Streamlit nhỏ: chọn pin, xem SOH thực tế, SOH dự báo và cảnh báo.
+### 9.4 Demo video và Streamlit app (đã chốt ở Rec.md mục 7)
+- **Làm cả hai, nhưng ưu tiên thấp:** chỉ bắt đầu khi đã xong các phần chính.
+- **Demo video 8–10 phút, mỗi thành viên tự trình bày phần của mình:**
+
+| Phút | Nội dung | Người trình bày |
+|---|---|---|
+| 0:00–1:00 | Bài toán và ý nghĩa kinh doanh | Khải Hưng |
+| 1:00–2:30 | Dữ liệu gốc (file `.mat`, vấn đề cột `Capacity` 2,7 V); chạy pipeline tiền xử lý | Khải Hưng |
+| 2:30–3:30 | Các hình mô tả chính và kết quả kiểm định | Minh Vũ, Tiến Hưng |
+| 3:30–6:30 | 4 mô hình, mỗi mô hình khoảng 45 giây: chạy notebook, hình dự báo, một con số chính | Từng người phụ trách |
+| 6:30–7:30 | SEM: sơ đồ đường dẫn | Quốc Đạt |
+| 7:30–8:30 | Bảng so sánh mô hình | Khải Hưng |
+| 8:30–9:30 | Khuyến nghị cho doanh nghiệp và người dùng | Cả nhóm |
+
+- **Streamlit app:** chọn một pin, xem SOH thực tế và dự báo, cảnh báo sắp chạm EOL.
 
 ### 9.5 GitHub
 - README có phần chạy lại từ đầu: `pip install -r requirements.txt`, tải dataset vào `data/raw/`, chạy 3 script và các notebook theo thứ tự số.
 - Không commit dữ liệu.
-- Đổi tên repo theo quy ước `STAT3013.QXX_GroupYY`.
+- Đổi tên repo thành `STAT3013.R11.CTTT_Group08`.
 
 ---
 
@@ -610,15 +608,16 @@ Mỗi người phải trả lời được mọi câu dưới đây, không ch�
 | Cột `Capacity` gốc có vấn đề gì? | Là dung lượng đến 2,7 V; ở 4°C/4 A gây ra giá trị thấp giả tạo |
 | Vì sao chọn d = 1? | ADF: chuỗi gốc p > 0,5, chuỗi sai phân p < 0,001 |
 | VIF là gì, vì sao không đưa Re và Rct cùng lúc? | r = 0,97, gây đa cộng tuyến (Chap 3, tr. 41) |
-| Vì sao GRU không thắng? (nếu đúng như vậy) | Dữ liệu nhỏ khoảng 1.500 dòng (Chap 6, tr. 13) |
+| Vì sao LSTM không thắng? (nếu đúng như vậy) | Dữ liệu nhỏ khoảng 1.500 dòng (Chap 6, tr. 13) |
 | Khuyến nghị về sạc pin dựa trên gì? | Dataset không có dữ liệu sạc nhanh; chỉ nói về nhiệt độ, tải và độ sâu xả |
 
 ### 10.3 Checklist nộp bài
 - [ ] Full Report (PDF), nộp trên Moodle
 - [ ] IEEE Paper (PDF), nộp trên Moodle
 - [ ] Slides, nộp trên Moodle
-- [ ] Link GitHub (đã đổi tên repo `STAT3013.QXX_GroupYY`)
+- [ ] Link GitHub (đã đổi tên repo `STAT3013.R11.CTTT_Group08`)
 - [ ] Link demo video
+- [ ] Link Streamlit app (nếu kịp)
 - [ ] Ảnh Turnitin ≤ 10%
 - [ ] Ảnh kiểm tra AI và trang giải trình
 

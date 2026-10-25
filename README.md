@@ -1,6 +1,6 @@
 # Lithium-Ion Battery Degradation and SOH Prognostics under Variable Operating Conditions
 
-**Course project, STAT3013 (Intermediate Statistical Analysis), Group 4AnhTai**
+**Course project, STAT3013 (Intermediate Statistical Analysis), class STAT3013.R11.CTTT, Group 08 (4AnhTai)**
 *Statistical and Machine Learning-Based Modeling of Lithium-Ion Battery Degradation and State-of-Health Prognostics under Variable Operating Conditions*
 
 ## 1. Project overview
@@ -16,14 +16,14 @@ SOH is defined as `SOH = C / C0`, the current discharge capacity divided by the 
 | RQ1 | Does the fade rate differ significantly across temperature, current and discharge profile? | Inferential statistics |
 | RQ2 | How much SOH does each factor cost per cycle? | Multiple regression |
 | RQ3 | How well can capacity be forecast from a cell's own history? | ARIMA / ARIMAX |
-| RQ4 | How well do charge and impedance features predict the next-cycle SOH? | SVR / Random Forest |
-| RQ5 | Does a sequence model beat classical ML on this small dataset? | GRU / LSTM |
+| RQ4 | How well do charge and impedance features predict the next-cycle SOH? | SVR |
+| RQ5 | Does a sequence model beat classical ML on this small dataset? | LSTM |
 | RQ6 | Do operating conditions act on SOH through internal resistance? | SEM / path analysis |
 
 ## 2. Expected outputs
 
 - **Full report** (about 30 pages) and **IEEE conference paper** (7 to 10 pages).
-- **Presentation slides** and a **demo video**.
+- **Presentation slides** and a **demo video**, plus a small **Streamlit app** (low priority, built after the core work).
 - **This repository**: reproducible pipeline from raw files to figures and model predictions.
 - **Plagiarism (Turnitin <= 10%) and AI-content check evidence.**
 - Findings and a model comparison table, translated into recommendations for warranty design, fleet management and users.
@@ -47,26 +47,31 @@ Raw files are not stored in git. Download them from the [project Google Drive](h
 
 The workflow follows the four analytics levels taught in the course:
 
+0. **Preprocessing**: parse, join and clean the raw files, compute SOH, flag outliers (Isolation Forest is used only as a cross-check of the outlier flags).
 1. **Descriptive**: distributions, boxplots and SOH curves by operating condition.
 2. **Diagnostic / inferential**: confidence intervals, t-test, F-test, Levene, one-way ANOVA with Tukey HSD, chi-square. The unit of observation is the **cell**, not the cycle, because cycles of one cell are strongly autocorrelated.
-3. **Predictive** (one algorithm per team member, same data split and metrics):
-   - Multiple log-linear regression with interaction terms (optional extension: logistic regression for "SOH below 0.8 within 20 cycles").
-   - ARIMA / ARIMAX.
-   - SVR / Random Forest, with Isolation Forest for anomaly checks.
-   - GRU / LSTM.
+3. **Predictive** (four algorithms, one per team member, same data split and metrics):
+
+   | Type | Algorithm | Owner |
+   |---|---|---|
+   | Traditional statistics | Multiple log-linear regression with interaction terms | Quoc Dat |
+   | Traditional statistics | ARIMA / ARIMAX | Tien Hung |
+   | Machine Learning | SVR (Support Vector Regression) | Minh Vu |
+   | Deep Learning | LSTM | Khai Hung |
+
 4. **Structural**: SEM / path analysis, operating conditions -> impedance (Re, Rct) -> SOH.
 5. **Prescriptive**: recommendations for warranty, fleet maintenance and users.
 
-**Evaluation protocol:** train/test split by cell (never by cycle), one test cell per operating condition, MAE / RMSE / MAPE / R^2 against a naive persistence baseline, plus RUL error. Details are in [`docs/Go.md`](docs/Go.md).
+**Evaluation protocol:** train/test split by cell (never by cycle), one test cell per operating condition, MAE / RMSE / MAPE / R^2 against a naive persistence baseline, plus RUL error. The sensitivity and specificity of an "EOL within 20 cycles" warning are derived from each model's forecasts. Details are in [`docs/Rec.md`](docs/Rec.md) and [`docs/Go.md`](docs/Go.md).
 
 ## 5. Team
 
 | Member | Role |
 |---|---|
-| Khai Hung | Leader, Deep Learning (GRU / LSTM) |
-| Quoc Dat | Traditional statistical models (regression, SEM) |
-| Tien Hung | Traditional statistical models (inference, ARIMA / ARIMAX) |
-| Minh Vu | Machine Learning (SVR / Random Forest) |
+| Khai Hung | Leader, Deep Learning (LSTM), preprocessing, evaluation protocol, model comparison |
+| Quoc Dat | Traditional statistical models (multiple regression, SEM) |
+| Tien Hung | Traditional statistical models (inferential statistics, ARIMA / ARIMAX) |
+| Minh Vu | Machine Learning (SVR), descriptive statistics |
 
 ## 6. Project structure
 
@@ -91,8 +96,10 @@ The workflow follows the four analytics levels taught in the course:
 │   └── predictions/
 ├── docs/
 │   ├── Introduction_of_dataset.md
+│   ├── Rec.md
 │   ├── Go.md
 │   ├── WBS.md
+│   ├── Work_log.md
 │   ├── requirements_text.txt
 │   └── [Project] STAT3013_Project_Requirements (2026) (1).pdf
 └── deliverables/
@@ -121,6 +128,8 @@ The workflow follows the four analytics levels taught in the course:
 | `reports/predictions/` | One prediction CSV per model in a common format, read by the comparison notebook. |
 | `docs/` | Project documentation. |
 | `docs/Introduction_of_dataset.md` | Full dataset description, quality findings, cleaning rules and data dictionary. |
+| `docs/Rec.md` | Record of all locked team decisions (Vietnamese). The reference when other documents disagree. |
+| `docs/Work_log.md` | Detailed log of each member's work, the main source for writing the report and paper (Vietnamese). |
 | `docs/Go.md` | Step-by-step implementation plan (Vietnamese, team use). |
 | `docs/WBS.md` | Work breakdown, roles and schedule (Vietnamese, team use). |
 | `docs/[Project] STAT3013_Project_Requirements (2026) (1).pdf` | Official course project requirements. |
@@ -290,10 +299,10 @@ These rules are **mandatory** for every member. They keep the history readable, 
 | `preprocess` | Parsing, joining, cleaning, SOH computation |
 | `eda` | Descriptive statistics and exploratory figures |
 | `inference` | Confidence intervals, t-test, ANOVA, chi-square |
-| `regression` | Linear and logistic regression |
+| `regression` | Multiple log-linear regression |
 | `arima` | ARIMA / ARIMAX |
-| `ml` | SVR, Random Forest, Isolation Forest |
-| `dl` | GRU / LSTM |
+| `ml` | SVR (and Isolation Forest data checks) |
+| `dl` | LSTM |
 | `sem` | SEM / path analysis |
 | `compare` | Model comparison |
 | `report`, `paper`, `slides` | The three written deliverables |
