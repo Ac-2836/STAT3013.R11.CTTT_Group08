@@ -37,6 +37,11 @@ The files are described below **in the order they are created**. Full rules and 
 
 ## 1. `discharge_ops.csv`: one row per discharge (2,794 rows)
 
+> [!NOTE]
+> ## NOTE: what this file is used for
+> - **Intermediate table**: input of `cycles.csv`. Do not use it for analysis or models (it still contains invalid discharges).
+> - **Evidence for the report**: comparing `capacity_Ah` with `capacity_to_2p7V_Ah` and `capacity_int_Ah` shows that NASA's capacity stops at 2.7 V (finding F1, one of the report's main contributions).
+
 Every discharge in the raw data, nothing removed yet. A sample is "loaded" when the measured current is below −0.1 A (current is negative while discharging).
 
 | Column | Unit | Meaning |
@@ -60,6 +65,11 @@ Every discharge in the raw data, nothing removed yet. A sample is "loaded" when 
 
 ## 2. `charge_ops.csv`: one row per charge (2,815 rows)
 
+> [!NOTE]
+> ## NOTE: what this file is used for
+> - **Intermediate table**: source of the `chg_*` columns and of `rest_before_h` in `cycles.csv`. Do not use it directly for analysis.
+> - To study the charges themselves (e.g. how `chg_cc_time_s` shrinks with age), use the `chg_*` columns of `cycles_clean.csv` instead, where each charge is already matched to its discharge.
+
 Every charge follows the same recipe: a constant 1.5 A until the voltage reaches 4.2 V (the **CC phase**), then 4.2 V held while the current falls to 0.02 A.
 
 | Column | Unit | Meaning |
@@ -73,6 +83,11 @@ Every charge follows the same recipe: a constant 1.5 A until the voltage reaches
 
 ## 3. `impedance_ops.csv`: one row per EIS measurement (1,956 rows)
 
+> [!NOTE]
+> ## NOTE: what this file is used for
+> - **Intermediate table**: source of `Re_ohm` and `Rct_ohm` in `cycles.csv`. Values are raw (not cleaned), so do not use it for analysis.
+> - **Evidence for the report**: the impossible G8 values (up to ±10¹⁵ Ω) justify excluding group G8.
+
 | Column | Unit | Meaning |
 |---|---|---|
 | `battery_id`, `op_index`, `start_time` | | As above, for this measurement. |
@@ -83,6 +98,11 @@ Every charge follows the same recipe: a constant 1.5 A until the voltage reaches
 Values are **raw**. They are empty for 9 measurements where NASA's calculation failed (all G8). 14 impossible values (G8 only) are still present here; they are removed in `cycles_clean.csv`.
 
 ## 4. `cycles.csv`: one row per discharge, joined (2,794 rows)
+
+> [!NOTE]
+> ## NOTE: what this file is used for
+> - **Input of the cleaning step** (`clean_dataset.py`). Not cleaned, so **do not use it for analysis or models**.
+> - Use it only to trace a value back: every row of `cycles_clean.csv` and `cycles_dropped.csv` comes from one row here (same `battery_id` + `op_index`).
 
 All columns of `discharge_ops.csv`, plus the information below. **Not cleaned yet.**
 
@@ -101,6 +121,12 @@ Only earlier measurements are attached, never later ones, so no future informati
 
 ## 5. `cycles_dropped.csv`: the removed discharges (136 rows)
 
+> [!NOTE]
+> ## NOTE: what this file is used for
+> - **Team review of the cleaning rules** ([`docs/Go.md`](../../docs/Go.md) step 1.6, Tien Hung): pick dropped rows and check that `drop_reason` is right.
+> - **Report, Methodology (section 3.1)**: the table of exclusion rules and row counts.
+> - Never use these rows in analysis or models.
+
 Same columns as `cycles.csv`, plus `drop_reason`. Rules are checked in this order and the first match is recorded:
 
 | `drop_reason` | Rows | Why the discharge is not a valid capacity measurement |
@@ -111,6 +137,19 @@ Same columns as `cycles.csv`, plus `drop_reason`. Rules are checked in this orde
 | `capacity_out_of_range` | 1 | `capacity_int_Ah` outside 0.05–2.1 Ah (B0036, cycle 114: 2.444 Ah). |
 
 ## 6. `cycles_clean.csv`: one row per valid discharge (2,658 rows) — **main table**
+
+> [!NOTE]
+> ## NOTE: what this file is used for — the main table of the project
+> | Work | Rows to use | Owner |
+> |---|---|---|
+> | Descriptive statistics at cycle level, histograms, boxplots, SOH curves | Tiers A, B, N without `cap_outlier`, `break_in` | Minh Vu (lead), whole team |
+> | Isolation Forest cross-check of the outlier flags | Tiers A, B | Minh Vu |
+> | Multiple log-linear regression | Tier A without `cap_outlier`, `break_in` | Quoc Dat |
+> | ARIMA / ARIMAX (series of `capacity_int_Ah` over `cycle_valid`) | Tier A, one cell at a time | Tien Hung |
+> | SVR and LSTM | Tier A without `cap_outlier`, `break_in`; train/test split by cell | Minh Vu, Khai Hung |
+> | SEM / path analysis | Tiers A, B, rows where a new EIS was taken (`eis_op_index` changes) | Quoc Dat, Tien Hung |
+> | Effect of changing temperature and current on capacity (cold-weather recommendation) | Tier C, column `soh_segment` | Whole team |
+> | Model comparison and the "end of life within 20 cycles" warning | Tier A test cells `B0007`, `B0034`, `B0047`, `B0055` | Khai Hung |
 
 All columns of `cycles.csv` except `n_samples`, plus the columns below. `Re_ohm` and `Rct_ohm` are cleaned: values outside 0–0.5 Ω are replaced by the cell's last valid earlier value (no row changed in practice). They are empty for 57 rows (first 19 discharges of B0005, B0006, B0007, before any EIS).
 
@@ -129,6 +168,12 @@ All columns of `cycles.csv` except `n_samples`, plus the columns below. `Re_ohm`
 The shared modelling data set is `tier == "A"` without `cap_outlier` and `break_in` rows ([`docs/Rec.md`](../../docs/Rec.md) section 6).
 
 ## 7. `battery_summary.csv`: one row per cell (34 rows)
+
+> [!NOTE]
+> ## NOTE: what this file is used for
+> - **Choosing cells**: the `tier` column decides which cells each analysis may use (table below). Filter by tier instead of typing cell lists by hand.
+> - **Descriptive statistics at cell level**: `C0_Ah` (cell-to-cell differences when new), `soh_last`.
+> - **Report, Methodology**: the table of cells, conditions, removed rows and tiers.
 
 | Column | Unit | Meaning |
 |---|---|---|
@@ -155,6 +200,14 @@ The shared modelling data set is `tier == "A"` without `cap_outlier` and `break_
 | B | All other cells | 10 | Comparing ageing speed between conditions |
 
 ## 8. `battery_fade.csv`: ageing speed per cell (23 rows)
+
+> [!NOTE]
+> ## NOTE: what this file is used for — the unit of observation for statistical tests
+> - **Inferential statistics** (Tien Hung, lead): confidence intervals, F-test / Levene, t-tests comparing conditions, one-way ANOVA with Tukey. Run every test on **both** `fade_pct_per_100cyc` and `fade25_pct_per_100cyc`.
+> - **Correlation of ageing speed with cell temperature** (`T_max_med`).
+> - **Two-step regression** of `fade_pct_per_100cyc` on the test conditions (Quoc Dat).
+> - **Descriptive statistics at cell level**: `fade_pct_per_100cyc`, `cycles_to_soh80`.
+> - **Warranty recommendation** ("B10 life"): `cycles_to_soh80` per condition.
 
 Cells of tiers A, B and N (constant conditions). Calculated without `cap_outlier` and `break_in` rows. Statistical tests use these rows, because discharges of the same cell are not independent.
 
