@@ -1,9 +1,8 @@
-# Local data is never committed; only the empty folder skeleton and the raw-data README are kept
+# Raw data is never committed (backup on Google Drive); only its README is kept.
+# Processed tables in data/processed/ are committed so teammates can use them without rerunning the pipeline.
 data/*
 !data/raw/
 !data/processed/
 data/raw/*
-data/processed/*
 !data/raw/.gitkeep
 !data/raw/README.md
-!data/processed/.gitkeep
