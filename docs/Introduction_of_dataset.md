@@ -238,7 +238,7 @@ soh_segment = capacity_int_Ah / C0 của segment đó   (áp dụng cho mọi pi
 ```
 *Vì sao C₀ không dùng giá trị đầu tiên:* chu kỳ đầu thường bất thường (F4, F10). Lấy trung vị phù hợp theo Chap 1 tr. 41: median không bị ảnh hưởng bởi giá trị ở hai đầu phân phối.
 
-**Các file đầu ra** trong `data/processed/` (không commit, chạy lại bằng script):
+**Các file đầu ra** trong `data/processed/` (có commit lên repo; chỉ sinh bằng script, không sửa tay; chạy lại script và commit lại khi đổi quy tắc):
 | File | Script | Số dòng | Một dòng là |
 |---|---|---|---|
 | `discharge_ops.csv` | `build_dataset.py` | 2.794 | Một lần xả (chưa ghép, chưa lọc) |

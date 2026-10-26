@@ -58,6 +58,8 @@ Cả 3 script tự kiểm tra bằng `assert`. Nếu một con số đối chi�
 | `battery_summary.csv` | 34 | Một pin, kèm tier |
 | `battery_fade.csv` | 23 | Một pin tier A/B/N: tốc độ suy giảm |
 
+*Cập nhật ngày 26/10/2026:* theo quyết định của Khải Hưng, các file trong `data/processed/` **có commit** lên repo (commit `75bfca2`, sửa `.gitignore`), để cả nhóm dùng chung một bộ bảng mà không cần chạy lại pipeline. Dữ liệu gốc trong `data/raw/` vẫn không bao giờ commit (bản sao lưu trên Google Drive).
+
 Định nghĩa từng cột: Introduction_of_dataset.md mục 5–6. Các quyết định: Rec.md mục 2, 2.1, 2.2.
 
 ---

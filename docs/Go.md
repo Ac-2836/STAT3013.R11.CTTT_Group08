@@ -87,7 +87,7 @@ Toàn bộ đồ án đi theo mạch dưới đây. Mạch này cũng khớp v�
 **0.3 Cấu trúc thư mục thống nhất:**
 ```
 data/raw/              dữ liệu gốc .mat (KHÔNG commit, ~230 MB)
-data/processed/        CSV sinh ra từ pipeline (KHÔNG commit, chạy lại được)
+data/processed/        CSV sinh ra từ pipeline (CÓ commit; chỉ sinh bằng script, không sửa tay)
 src/                   pipeline dùng chung: build, clean, eda
 notebooks/             01_descriptive.ipynb, 02_inferential.ipynb, 10_regression.ipynb,
                        20_arima.ipynb, 30_ml.ipynb, 40_dl.ipynb, 50_sem.ipynb, 60_compare.ipynb
