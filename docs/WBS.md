@@ -99,7 +99,7 @@ Mỗi chương của môn học được chuyển thành các gói công việc 
 
 | Mã | Công việc | R | Review | Bắt đầu | Kết thúc | Output | Xong khi |
 |---|---|---|---|---|---|---|---|
-| C3.1 | Ma trận tương quan và VIF; phát hiện Re–Rct r = 0,97 | Quốc Đạt | Tiến Hưng | 03/11 | 04/11 | `notebooks/10_regression.ipynb` | Có bảng VIF |
+| C3.1 | Ma trận tương quan và VIF; Re–Rct có r = 0,97 trong G1 nhưng 0,43 trên tier A, phải kiểm tra lại trên tập train | Quốc Đạt | Tiến Hưng | 03/11 | 04/11 | `notebooks/10_regression.ipynb` | Có bảng VIF |
 | C3.2 | Hồi quy đơn `soh ~ cycle` (G1) và residual plot | Quốc Đạt | Tiến Hưng | 04/11 | 05/11 | Như trên | Có R², F-test, t-test, CI của hệ số dốc |
 | C3.3 | Mô hình log-linear và polynomial bậc 2, so sánh bằng adjusted R² | Quốc Đạt | Tiến Hưng | 05/11 | 06/11 | Như trên | Đã chọn được dạng mô hình kèm lý do |
 | C3.4 | Hồi quy bội với dummy và tương tác cycle × điều kiện | Quốc Đạt | Tiến Hưng | 06/11 | 09/11 | Như trên | Có bảng hệ số kèm CI và diễn giải dạng "x% mỗi chu kỳ" |

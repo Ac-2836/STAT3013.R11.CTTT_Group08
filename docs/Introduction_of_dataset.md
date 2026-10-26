@@ -68,7 +68,7 @@
 | Inferential (t-test, chi-square, ANOVA) | So sánh tốc độ suy giảm giữa các điều kiện, **ở mức pin** | Làm được, nhưng mỗi nhóm có ít pin (n = 2–5) |
 | Regression | ln(SOH) theo chu kỳ, điều kiện vận hành và các tương tác | Tốt |
 | SEM | Path model: điều kiện → Re/Rct → SOH | Làm được bằng biến quan sát (sau khi học Chap 7) |
-| ARIMA / Forecasting | Chuỗi dung lượng theo chu kỳ của từng pin (tối đa 197 điểm) | Tốt với các pin tier A |
+| ARIMA / Forecasting | Chuỗi dung lượng theo chu kỳ của từng pin (tối đa 196 điểm sau làm sạch; B0033/B0034 có 197 lần xả gốc) | Tốt với các pin tier A |
 | ML / DL | Dự báo SOH chu kỳ kế tiếp từ đặc trưng lag, sạc, trở kháng | Tốt, nhưng dữ liệu nhỏ đối với DL |
 | Khuyến nghị kinh doanh | Bảo hành, quản lý đội xe, vận hành trời lạnh/nóng | Làm được. **Không có dữ liệu về thói quen sạc và không có dữ liệu chi phí.** |
 
@@ -161,6 +161,8 @@ Mức thay đổi dung lượng so với chu kỳ trước, tính trên các pin
 | 1 – 24 giờ | 61 | +0,0081 |
 | > 1 ngày | 57 | **+0,0294** |
 
+> ⚠ **Cập nhật ngày 26/10/2026:** bảng này **chưa tái tạo được** bằng pipeline mới. Chạy thử trên 22 pin tier A/B, chưa bỏ dòng gắn cờ, ΔC tính giữa hai dòng hợp lệ liền kề, cho n = 1.167 / 701 / 64 / 66 và trung vị nhóm > 1 ngày là +0,0374 Ah. Chưa rõ bảng cũ dùng tập dữ liệu và cách tính ΔC nào. Sẽ kiểm tra lại khi viết phần EDA của `src/eda_dataset.py`. **Không trích các con số trong bảng này vào báo cáo cho tới khi tái tạo được.** Kết luận định tính (dung lượng tăng sau nghỉ dài) vẫn giữ nguyên.
+
 - Đây là hiện tượng điện hóa có thật, không phải lỗi đo, nên **không xóa**. Cột `long_rest` (nghỉ hơn 1 giờ) được tạo làm biến giải thích.
 - Đây cũng là nguồn chính tạo ra các "răng cưa" trên đường SOH (Hình 1, Hình 3).
 
@@ -237,11 +239,16 @@ soh_segment = capacity_int_Ah / C0 của segment đó   (áp dụng cho mọi pi
 *Vì sao C₀ không dùng giá trị đầu tiên:* chu kỳ đầu thường bất thường (F4, F10). Lấy trung vị phù hợp theo Chap 1 tr. 41: median không bị ảnh hưởng bởi giá trị ở hai đầu phân phối.
 
 **Các file đầu ra** trong `data/processed/` (không commit, chạy lại bằng script):
-- `discharge_ops.csv`, `charge_ops.csv`, `impedance_ops.csv`: mỗi dòng là một thao tác.
-- `cycles.csv`: bảng đã ghép, chưa làm sạch.
-- **`cycles_clean.csv`: bảng dùng chung cho cả nhóm.**
-- `battery_summary.csv`: mỗi pin một dòng, kèm tier.
-- `battery_fade.csv`: tốc độ suy giảm ở mức pin, là đơn vị cho kiểm định.
+| File | Script | Số dòng | Một dòng là |
+|---|---|---|---|
+| `discharge_ops.csv` | `build_dataset.py` | 2.794 | Một lần xả (chưa ghép, chưa lọc) |
+| `charge_ops.csv` | `build_dataset.py` | 2.815 | Một lần sạc: `chg_duration_s`, `chg_end_time`, `chg_charge_Ah`, `chg_cc_time_s`, `chg_T_max_C` |
+| `impedance_ops.csv` | `build_dataset.py` | 1.956 | Một lần EIS: `Re_ohm`, `Rct_ohm` **thô** (chưa lọc; 9 giá trị NaN do số phức, đều ở G8) |
+| `cycles.csv` | `build_dataset.py` | 2.794 | Một lần xả, đã ghép với lần sạc, lần EIS trước và metadata, **chưa làm sạch** |
+| **`cycles_clean.csv`** | `clean_dataset.py` | **2.658** | **Một lần xả hợp lệ. Bảng dùng chung cho cả nhóm.** |
+| `cycles_dropped.csv` | `clean_dataset.py` | 136 | Một lần xả bị loại, kèm cột `drop_reason` (`excluded_battery` / `no_preceding_charge` / `cutoff_not_reached` / `capacity_out_of_range`) |
+| `battery_summary.csv` | `clean_dataset.py` | 34 | Một pin, kèm tier (gồm cả 4 pin X) |
+| `battery_fade.csv` | `eda_dataset.py` | 23 | Một pin có điều kiện không đổi (tier A, B, N): tốc độ suy giảm, là đơn vị cho kiểm định |
 
 ---
 
@@ -250,25 +257,59 @@ soh_segment = capacity_int_Ah / C0 của segment đó   (áp dụng cho mọi pi
 | Biến | Đơn vị | Thang đo (Chap 1) | Ý nghĩa |
 |---|---|---|---|
 | `battery_id`, `group` | – | Nominal | Mã pin, mã nhóm thí nghiệm |
+| `op_index` | – | Ratio (rời rạc) | Vị trí của thao tác xả trong mảng `cycle` của file `.mat`, **đếm từ 0**. Dùng để ghép với lần sạc và lần EIS trước đó. |
+| `chg_op_index` | – | Ratio (rời rạc) | `op_index` của lần sạc được ghép với lần xả này: lần sạc gần nhất có `op_index` nhỏ hơn hẳn, trong cùng pin. Luôn có `chg_op_index < op_index`. |
 | `cycle` | – | Ratio (rời rạc) | Số thứ tự lần xả trong dữ liệu gốc |
-| `cycle_valid` | – | Ratio (rời rạc) | Số thứ tự sau khi đã làm sạch. **Dùng làm trục thời gian.** |
-| `segment` | – | Ordinal | Đoạn điều kiện thứ mấy trong pin |
+| `cycle_valid` | – | Ratio (rời rạc) | Số thứ tự lần xả trong các dòng **hợp lệ** của pin, **đếm từ 1**. **Có** tính các dòng `cap_outlier` và `break_in`. **Dùng làm trục thời gian.** |
+| `segment` | – | Ordinal | Đoạn điều kiện thứ mấy trong pin, đánh số từ 1. Khóa segment = (`ambient_C`, `I_level_A`); segment mới bắt đầu khi khóa khác dòng hợp lệ liền trước của cùng pin. 22°C và 24°C tính là hai mức khác nhau. |
 | `start_time` | datetime | Interval | Thời điểm bắt đầu xả |
-| `ambient_C` | °C | **Interval** | Nhiệt độ môi trường. Slide tr. 26 lấy chính nhiệt độ làm ví dụ interval: được tính mean/SD, nhưng không được nói "43°C nóng gấp đôi 24°C". |
-| `I_level_A` | A | Ratio | Mức dòng xả (1, 2 hoặc 4) |
+| `ambient_C` | °C | **Interval** | Nhiệt độ môi trường, lấy từ `ambient_temperature` của **chính thao tác xả** (không lấy từ EIS, vì EIS luôn ghi 24°C hoặc 43°C). Slide tr. 26 lấy chính nhiệt độ làm ví dụ interval: được tính mean/SD, nhưng không được nói "43°C nóng gấp đôi 24°C". |
+| `I_level_A` | A | Ratio | Mức dòng xả (1, 2 hoặc 4) = `round(I_load_mean_A)`. Với xung vuông là biên độ (B0028 = 2 A). |
 | `profile` | – | Nominal | `constant_current` hoặc `square_wave_0.05Hz` |
 | `discharge_cutoff_V` | V | Ratio | Điện áp cắt, đại diện cho độ sâu xả |
 | `capacity_Ah` | Ah | Ratio | Trường gốc (dung lượng đến 2,7 V). **Chỉ dùng để đối chiếu.** |
-| `capacity_to_2p7V_Ah` | Ah | Ratio | Tính lại từ dữ liệu, để kiểm chứng F1 |
-| **`capacity_int_Ah`** | Ah | Ratio | **Dung lượng chuẩn:** tích phân dòng xả tới cutoff riêng của pin |
-| `C0_Ah`, **`soh`**, `soh_segment` | Ah, – | Ratio | Dung lượng lúc mới và SOH (định nghĩa ở Mục 5) |
-| `energy_Wh`, `duration_s`, `t_to_cutoff_s` | Wh, s, s | Ratio | ⚠ Gần như là hàm của chính dung lượng (tương quan khoảng 1,0). **Không dùng làm biến dự báo SOH của cùng chu kỳ đó.** |
-| `I_load_mean_A`, `V_min` | A, V | Ratio | Dòng tải trung bình, điện áp thấp nhất |
-| `T_start_C`, `T_max_C`, `T_mean_C` | °C | Interval | Nhiệt độ của chính cell khi xả (thể hiện mức tự phát nhiệt) |
-| `chg_charge_Ah`, `chg_cc_time_s`, `chg_duration_s`, `chg_T_max_C` | Ah, s, s, °C | Ratio | Thông tin của lần sạc ngay trước. **Biết được trước khi xả, nên là biến dự báo hợp lệ.** |
-| `rest_before_h`, `long_rest` | h, bool | Ratio, Nominal | Thời gian nghỉ từ lúc sạc xong đến lúc xả (giải thích F5) |
-| `Re_ohm`, `Rct_ohm` | Ω | Ratio | Trở kháng của lần EIS gần nhất **trước** lần xả |
-| `cap_outlier`, `break_in` | bool | Nominal | Các cờ chất lượng dữ liệu |
+| `capacity_to_2p7V_Ah` | Ah | Ratio | Tính lại từ dữ liệu, để kiểm chứng F1. Cùng công thức với `capacity_int_Ah` nhưng **dừng** ở mẫu đầu tiên có `Voltage_measured < 2,7` (tính cả mẫu đó). |
+| **`capacity_int_Ah`** | Ah | Ratio | **Dung lượng chuẩn:** tích phân `Current_measured` theo `Time` bằng công thức hình thang, chỉ trên các mẫu có tải (I < −0,1 A, đổi dấu thành dương; mẫu khác bằng 0), **hết chuỗi**. Khi chạm cutoff riêng của pin dòng tải về khoảng 0, nên kết quả là dung lượng tới cutoff. Công thức: `Σ (y[k] + y[k−1]) / 2 · (t[k] − t[k−1]) / 3600`. |
+| `C0_Ah`, **`soh`**, `soh_segment` | Ah, – | Ratio | Dung lượng lúc mới và SOH (định nghĩa ở Mục 5; cách cài đặt C₀ ở [Rec.md](Rec.md) mục 2.1) |
+| `energy_Wh`, `duration_s`, `t_to_cutoff_s` | Wh, s, s | Ratio | `duration_s` = `Time[-1]`; `t_to_cutoff_s` = `Time` của mẫu có tải cuối cùng; `energy_Wh` = hình thang của V × dòng tải (chỉ mẫu có tải) / 3.600. ⚠ Gần như là hàm của chính dung lượng (tương quan khoảng 1,0). **Không dùng làm biến dự báo SOH của cùng chu kỳ đó.** |
+| `I_load_mean_A`, `V_min` | A, V | Ratio | Dòng tải trung bình (trung bình \|I\| **chỉ trên các mẫu có tải**, I < −0,1 A), điện áp thấp nhất của cả chuỗi |
+| `T_start_C`, `T_max_C`, `T_mean_C` | °C | Interval | Nhiệt độ của chính cell khi xả (thể hiện mức tự phát nhiệt): mẫu đầu, max và mean trên toàn chuỗi |
+| `n_samples` | – | Ratio | Số mẫu đo của lần xả |
+| `chg_op_index`, `chg_charge_Ah`, `chg_cc_time_s`, `chg_duration_s`, `chg_end_time`, `chg_T_max_C` | –, Ah, s, s, datetime, °C | Ratio | Thông tin của lần sạc được ghép. `chg_charge_Ah` = hình thang của I chỉ trên mẫu I > 0,1 A (bỏ nhiễu khởi động như −4 A); `chg_cc_time_s` = `Time` của mẫu đầu tiên có `Voltage_measured` ≥ 4,2 V, tức hết pha CC (NaN nếu không chạm); `chg_duration_s` = `Time[-1]`; `chg_end_time` = giờ bắt đầu sạc + `chg_duration_s`. **Biết được trước khi xả, nên là biến dự báo hợp lệ.** |
+| `n_chg_since_prev_dis` | – | Ratio (rời rạc) | Số lần sạc nằm giữa lần xả trước và lần xả này. Trên dòng hợp lệ: **1** ở 2.639 dòng (bình thường); **2** ở 16 dòng (G1 lần 12, 31 của B0005–07, lần 46, 56 của B0018; G2 lần 8, 23): lần sạc được ghép có thể chỉ là sạc bù, khi đó `chg_cc_time_s` ≈ 0; **0** ở 3 dòng (lần 90 của B0005–07). Dùng để lọc hoặc kiểm tra độ vững khi dùng đặc trưng sạc. |
+| `rest_before_h`, `long_rest` | h, bool | Ratio, Nominal | Thời gian nghỉ từ lúc lần sạc được ghép (`chg_op_index`) kết thúc đến lúc xả (giải thích F5). ⚠ Ở lần xả thứ 90 của B0005, B0006, B0007, lần sạc được ghép nằm trước một lần xả khác, nên `chg_*` và `rest_before_h` của 3 dòng này mô tả lần sạc cũ hơn (xem Rec.md mục 2.1, dòng 2b). |
+| `eis_op_index`, `Re_ohm`, `Rct_ohm` | –, Ω | Ratio | Trở kháng của lần EIS gần nhất **trước** lần xả. Giá trị ngoài (0; 0,5) Ω bị đặt NaN rồi điền bằng giá trị hợp lệ trước đó của cùng pin (trên 2.658 dòng hợp lệ, bộ lọc không thay đổi giá trị nào; mọi giá trị sai đều ở G8). 57 dòng trống (19 dòng đầu của B0005, B0006, B0007, trước lần EIS đầu tiên). |
+| `cap_outlier`, `break_in` | bool | Nominal | Các cờ chất lượng dữ liệu (cách tính ở Rec.md mục 2.1). `break_in` xét `cycle_valid` ≤ 10 (Rec.md mục 2.2). |
+| `tier` | – | Nominal | Tier của pin (A / B / C / N), lấy từ `battery_summary.csv` |
+
+### 6.1 Biến suy ra khi phân tích (không phải cột trong file)
+
+| Biến | Định nghĩa | Ghi chú |
+|---|---|---|
+| `temp` | `"4°C"` nếu `ambient_C < 10`; `"22-24°C"` nếu `ambient_C < 30`; còn lại `"43-44°C"` | Dùng trong `C(temp)` của công thức hồi quy. ⚠ Ở đây **22°C và 24°C được gộp làm một mức**, khác với cách chia segment (tách hai mức). |
+
+### 6.2 Các cột ở mức pin: `battery_summary.csv` và `battery_fade.csv`
+
+| Biến | File | Định nghĩa |
+|---|---|---|
+| `battery_id`, `group`, `profile`, `discharge_cutoff_V` | cả hai | Định danh và điều kiện cố định của pin |
+| `ambient_C`, `I_level_A` | cả hai | Điều kiện của pin 1 segment; NaN với pin nhiều segment (điều kiện từng segment xem trong `cycles_clean.csv`) |
+| `tier` | cả hai | A / B / C / N / X (summary); A / B / N (fade) |
+| `n_discharges_raw`, `n_dropped` | summary | Số lần xả gốc và số dòng bị loại ở bước làm sạch. Tổng `n_dropped` = 136. |
+| `n_segments`, `n_break_in` | summary | Số segment; số dòng `break_in` |
+| `C0_Ah` | summary | C₀ của pin 1 segment; NaN với pin nhiều segment |
+| `n_valid` | summary | Số dòng hợp lệ của pin, **đã bỏ `break_in`**, có tính `cap_outlier`. Dùng cho quy tắc tier "≥ 60 chu kỳ". |
+| `n_cap_outlier` | summary | Số dòng `cap_outlier` trong tập trên. Tỉ lệ outlier = `n_cap_outlier / n_valid` (tier N khi > 10%). |
+| `soh_min` | summary | SOH nhỏ nhất trên các dòng hợp lệ, đã bỏ cả `break_in` và `cap_outlier` |
+| `soh_last` | summary | ⚠ SOH của dòng cuối, đã bỏ `break_in` nhưng **có** tính `cap_outlier` |
+| `soh_last` | fade | ⚠ SOH của dòng cuối, đã bỏ **cả** `cap_outlier` lẫn `break_in`. Cùng tên nhưng khác nghĩa với cột trong summary; khi dùng phải ghi rõ lấy từ file nào. |
+| `cycles_to_soh80` | fade | `cycle_valid` đầu tiên có `soh < 0,8` (nhỏ hơn hẳn), trên các dòng đã bỏ `cap_outlier` và `break_in`. NaN nếu chưa bao giờ chạm. |
+| `fade_pct_per_100cyc` | fade | `−slope × 100 × 100`, với `slope` là hệ số dốc của `np.polyfit(cycle_valid, soh, 1)` trên toàn bộ dòng của pin đã bỏ `cap_outlier` và `break_in`. Đơn vị: điểm % SOH mất đi sau 100 chu kỳ. |
+| `fade25_pct_per_100cyc` | fade | Như trên, chỉ lấy các dòng có `cycle_valid ≤ 25`. Vì đã bỏ outlier nên có thể ít hơn 25 điểm. |
+| `T_max_med` | fade | Trung vị của `T_max_C` trên các dòng đã bỏ `cap_outlier` và `break_in` |
+| `n_used`, `n_used25` | fade | Số dòng dùng để fit `fade_pct_per_100cyc` và `fade25_pct_per_100cyc`. `n_used25` < 25 ở B0026 (22), B0033 (19), B0045 (23), B0054 (15). |
+
+`battery_fade.csv` gồm các pin tier A, B và N (23 pin có điều kiện không đổi). Ở pin X, `battery_summary.csv` chỉ có `n_discharges_raw` = `n_dropped` = 25; các cột thống kê để trống.
 
 ---
 
@@ -317,12 +358,12 @@ Kurtosis ở đây là Pearson kurtosis (phân phối chuẩn = 3), đúng quy �
 | 24°C, CC 2 A (G1 + B0036) | 5 | 17,9 (5,9–24,7) | 14,4 |
 | 24°C, CC 4 A (B0033, B0034) | 2 | 8,3 (6,8–9,7) | 20,1 |
 | 24°C, xung vuông 4 A / 2 A | 3 / 1 | 10,9 / 14,6 | 9,7 / 13,3 |
-| **43°C, CC 4 A (G3)** | 4 | **28,4** (21,4–30,9) | 27,9 |
+| **43°C, CC 4 A (G3)** | 4 | **28,4** (21,4–30,9) | 27,8 |
 | **4°C, CC 1 A (G7)** | 4 | **29,9** (25,4–32,0) | 64,8 |
 | 4°C, CC 2 A (G9, không gồm B0054) | 3 | 10,0 (9,5–10,3) | 27,9 |
 
 Các nhận xét dưới đây **là giả thuyết, sẽ kiểm định ở Chap 2**:
-1. **Ở cùng dòng 4 A, pin ở 43°C suy giảm nhanh hơn pin ở 24°C**, xét trên cùng cửa sổ 25 chu kỳ: 27,9 so với 20,1. Kết luận nhất quán nhưng chỉ có 4 và 2 pin.
+1. **Ở cùng dòng 4 A, pin ở 43°C suy giảm nhanh hơn pin ở 24°C**, xét trên cùng cửa sổ 25 chu kỳ: 27,8 so với 20,1. Kết luận nhất quán nhưng chỉ có 4 và 2 pin.
 2. **Ở 4°C, dòng 1 A lại suy giảm nhanh hơn dòng 2 A.** Đây là điều ngược trực giác. Một giải thích khả dĩ: ở 2 A cell tự phát nhiệt nhiều hơn (T_max trung vị khoảng 15–21°C ở G9, so với 11–16°C ở G7), làm giảm tác hại của nhiệt độ thấp. Như vậy **nhiệt độ của chính cell** có thể là biến quan trọng hơn nhiệt độ môi trường.
 3. **Kết luận phụ thuộc vào cách đo tốc độ suy giảm.** Toàn bộ chuỗi và 25 chu kỳ đầu cho thứ hạng khác nhau, vì đường suy giảm không tuyến tính và các nhóm chạy số chu kỳ khác nhau (28–197). Báo cáo phải nêu rõ đã dùng cách đo nào, và trình bày cả hai.
 
@@ -360,7 +401,7 @@ Các nhận xét dưới đây **là giả thuyết, sẽ kiểm định ở Cha
 
 | Thành viên | Thuật toán | Dữ liệu và cách dựng | Câu hỏi trả lời |
 |---|---|---|---|
-| **Quốc Đạt** (thống kê truyền thống) | **Hồi quy bội log-linear có tương tác** (Chap 3) | Biến phụ thuộc ln(soh). Biến giải thích: cycle_valid, dummy nhiệt độ (k−1), I_level_A, cutoff, các tương tác cycle×dummy. Kiểm tra VIF vì Re/Rct có tương quan 0,97. Kiểm tra residual plot. Thêm phiên bản 2 bước trên `battery_fade.csv`. | Mỗi yếu tố làm SOH thay đổi bao nhiêu % mỗi chu kỳ |
+| **Quốc Đạt** (thống kê truyền thống) | **Hồi quy bội log-linear có tương tác** (Chap 3) | Biến phụ thuộc ln(soh). Biến giải thích: cycle_valid, dummy nhiệt độ (k−1), I_level_A, cutoff, các tương tác cycle×dummy. Kiểm tra VIF: Re/Rct tương quan 0,97 trong G1 nhưng chỉ 0,43 trên tier A. Kiểm tra residual plot. Thêm phiên bản 2 bước trên `battery_fade.csv`. | Mỗi yếu tố làm SOH thay đổi bao nhiêu % mỗi chu kỳ |
 | **Tiến Hưng** (thống kê truyền thống) | **ARIMA / ARIMAX** (Chap 5) | Chuỗi `capacity_int_Ah` theo `cycle_valid` của từng pin tier A. Dùng d = 1 (ADF đã xác nhận). Biến ngoại sinh: `rest_before_h` để giải thích F5, `Rct_ohm`. Không cần SARIMA vì không có tính mùa vụ cố định. | Dự báo SOH ngắn hạn, thời điểm chạm 80%, giá trị của biến ngoại sinh |
 | **Minh Vũ** (ML) | **SVR** (Chap 6) | Đặc trưng: SOH từ lag 1 đến lag 5, rolling mean, `chg_cc_time_s`, Re, Rct, `T_max` của chu kỳ trước, điều kiện vận hành, `rest_before_h`. Scale bằng z-score, chỉ fit trên train. | Dự báo SOH chu kỳ kế tiếp. Permutation importance để đối chiếu với kết quả hồi quy của Quốc Đạt. |
 | **Khải Hưng** (DL, Leader) | **LSTM** (Chap 6) | Đầu vào là cửa sổ 10 chu kỳ (cùng bộ đặc trưng với SVR), đầu ra là SOH chu kỳ kế. Mô hình nhỏ (1 lớp, 32 đơn vị), dùng early stopping. Chỉ có khoảng 1.500 dòng tier A, nên báo cáo trung thực nếu mô hình không thắng ML (Chap 6 tr. 13). | ML và DL có khác biệt gì trên dữ liệu nhỏ |

@@ -201,7 +201,7 @@ python src/clean_dataset.py      # -> cycles_clean.csv, battery_summary.csv
 
 ### 2.3 Viết nhận xét theo mẫu slide Chap 1, tr. 60
 Mạch viết: phát hiện, rồi con số, rồi hàm ý. Ví dụ:
-> "Ở 43°C, nhiệt độ cell khi xả đạt trung vị 61,8°C, so với 40,6°C ở 24°C. Xét trên cùng cửa sổ 25 chu kỳ đầu, pin ở 43°C mất khoảng 27,9 điểm % SOH sau mỗi 100 chu kỳ, so với 20,1 điểm % ở 24°C cùng dòng 4 A. Như vậy hệ thống làm mát cho pack là yêu cầu bắt buộc với xe vận hành ở khí hậu nóng."
+> "Ở 43°C, nhiệt độ cell khi xả đạt trung vị 61,8°C, so với 40,6°C ở 24°C. Xét trên cùng cửa sổ 25 chu kỳ đầu, pin ở 43°C mất khoảng 27,8 điểm % SOH sau mỗi 100 chu kỳ, so với 20,1 điểm % ở 24°C cùng dòng 4 A. Như vậy hệ thống làm mát cho pack là yêu cầu bắt buộc với xe vận hành ở khí hậu nóng."
 
 **Output:** `notebooks/01_descriptive.ipynb` và hình trong `reports/figures/`.
 **Xong khi:** mỗi bảng và mỗi hình có 2–3 câu diễn giải, và mỗi người giải thích được một hình bất kỳ.
@@ -345,7 +345,7 @@ model, battery_id, cycle_valid, scenario (E1|E2), y_true, y_pred, y_lower, y_upp
 
 | Bước | Làm thế nào | Vì sao (slide) |
 |---|---|---|
-| 5a.1 Tương quan | Ma trận tương quan của `soh`, `cycle_valid`, `Re_ohm`, `Rct_ohm`, `T_max_C`, `chg_cc_time_s`. **Re và Rct có r = 0,97**, nên cảnh báo đa cộng tuyến. | Chap 3, tr. 8, tr. 41 (\|r\| > 0,7) |
+| 5a.1 Tương quan | Ma trận tương quan của `soh`, `cycle_valid`, `Re_ohm`, `Rct_ohm`, `T_max_C`, `chg_cc_time_s`. **Re và Rct có r = 0,97 trong G1, nhưng chỉ 0,43 trên tier A** (dữ liệu mô hình thực sự dùng; tính bằng pipeline ngày 26/10/2026). Quyết định có đưa cả hai vào hay không phải dựa trên VIF thật của tập train. | Chap 3, tr. 8, tr. 41 (\|r\| > 0,7) |
 | 5a.2 Hồi quy đơn | `soh ~ cycle_valid` cho G1. Đọc R², SE, F-test, t-test và CI 95% của hệ số dốc. | tr. 22–30 |
 | 5a.3 Residual plot | Vẽ phần dư theo giá trị dự báo. Nếu thấy hình chữ U hoặc đường cong thì chuyển sang mô hình phi tuyến. | tr. 74, tr. 76 |
 | 5a.4 Log-linear | `ln(soh) ~ cycle_valid`, khi đó hệ số b₁·100 là % SOH thay đổi mỗi chu kỳ. So sánh với polynomial bậc 2 bằng adjusted R². | tr. 67–68, 73–74, 85 |
@@ -607,7 +607,7 @@ Mỗi người phải trả lời được mọi câu dưới đây, không ch�
 | Vì sao không làm two-way ANOVA? | Nhiều ô không có pin nào, cỡ mẫu không bằng nhau |
 | Cột `Capacity` gốc có vấn đề gì? | Là dung lượng đến 2,7 V; ở 4°C/4 A gây ra giá trị thấp giả tạo |
 | Vì sao chọn d = 1? | ADF: chuỗi gốc p > 0,5, chuỗi sai phân p < 0,001 |
-| VIF là gì, vì sao không đưa Re và Rct cùng lúc? | r = 0,97, gây đa cộng tuyến (Chap 3, tr. 41) |
+| VIF là gì, vì sao không đưa Re và Rct cùng lúc? | VIF đo mức một biến được giải thích bởi các biến khác (Chap 3, tr. 41). r(Re, Rct) = 0,97 trong G1 nhưng 0,43 trên tier A, nên chỉ bỏ một biến khi VIF trên tập train > 10 |
 | Vì sao LSTM không thắng? (nếu đúng như vậy) | Dữ liệu nhỏ khoảng 1.500 dòng (Chap 6, tr. 13) |
 | Khuyến nghị về sạc pin dựa trên gì? | Dataset không có dữ liệu sạc nhanh; chỉ nói về nhiệt độ, tải và độ sâu xả |
 

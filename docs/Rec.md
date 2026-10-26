@@ -32,13 +32,61 @@
 | 5 | Pin bị loại | **Toàn bộ G8 (B0049–B0052)** | Crash phần mềm; dung lượng phi vật lý (tới 3,03 Ah); B0052 không có dòng xả; trở kháng vô lý. G9 có cùng điều kiện nên không mất thông tin. |
 | 6 | Dòng bị loại | Không có lần sạc trước; điện áp thấp nhất > điện áp cắt + 0,1 V; dung lượng ngoài **[0,05; 2,1] Ah** | Lần xả không đại diện, bị cắt ngang, hoặc phi vật lý |
 | 7 | Trở kháng | Chỉ giữ Re, Rct trong **(0; 0,5) Ω**; giá trị loại bỏ thay bằng giá trị hợp lệ gần nhất **trước đó** của cùng pin | Không lấy dữ liệu tương lai; không điền trung bình toàn cục |
-| 8 | Cờ `cap_outlier` (giữ, không xóa) | Hampel (cửa sổ 7, k = 3, tối thiểu 0,05 Ah) **hoặc** sụt > 25% so với max 10 chu kỳ trước | Kết quả ổn định khi đổi tham số trong khoảng hợp lý |
+| 8 | Cờ `cap_outlier` (giữ, không xóa) | Hampel (cửa sổ 7, k = 3, tối thiểu 0,05 Ah) **hoặc** sụt > 25% so với max 10 chu kỳ trước | Kết quả ổn định khi đổi tham số trong khoảng hợp lý. *Cập nhật ngày 26/10/2026 (đo lại bằng pipeline mới):* số dòng gắn cờ là 57; cửa sổ 5 / 9 cho 56 / 57; k = 2,5 / 3,5 cho 62 / 53; mức sàn 0,03 / 0,08 Ah cho 73 / 52; ngưỡng sụt 20% / 30% cho 86 / 51. Như vậy kết quả **không nhạy với cửa sổ**, nhạy vừa với k, và **nhạy hơn với mức sàn và ngưỡng sụt**; báo cáo phải trình bày bảng độ nhạy này thay vì chỉ ghi "ổn định". |
 | 9 | Cờ `long_rest` | Nghỉ trước khi xả > **1 giờ** | Tách nghỉ theo quy trình (~1 phút hoặc ~37 phút) khỏi nghỉ ngoài dự kiến; dung lượng tăng tạm thời sau nghỉ dài là hiện tượng thật |
 | 10 | Cờ `break_in` | Trong 10 chu kỳ đầu và < **90%** C₀ | Giai đoạn khởi động của pin |
 | 11 | Phân tầng pin | **A**: 1 segment, ≥ 60 chu kỳ, SOH thấp nhất ≤ 0,85 · **N**: > 10% outlier · **C**: nhiều segment · **B**: còn lại · **X**: G8 | Các ngưỡng nằm trong khoảng trống tự nhiên của dữ liệu |
 | 12 | Isolation Forest | Chỉ dùng làm **công cụ kiểm tra chéo** các cờ outlier ở bước tiền xử lý, không tính là thuật toán modeling | — |
 
 **Trạng thái (26/10/2026):** các script và file CSV đã xóa để làm lại từ đầu từng bước. Các quyết định trên vẫn giữ nguyên.
+
+**Cập nhật ngày 26/10/2026:** đã viết lại `src/build_dataset.py`, `src/clean_dataset.py` và phần `battery_fade.csv` của `src/eda_dataset.py`. Chạy lại ra đúng mọi con số đối chiếu ở mục 2.1 (các script tự kiểm tra bằng `assert`). Chi tiết quá trình ở [Work_log.md](Work_log.md). Script ở commit `5121e3f` (branch `khai-hung`), chưa qua review của nhóm (WBS C1.4).
+
+### 2.1 Chi tiết thực thi (chốt ngày 26/10/2026)
+
+Bảng trên chốt **tham số**. Bảng dưới chốt **cách cài đặt** của từng quyết định. Các quy tắc này giữ đúng như bản `clean_dataset.py` cũ, để bản làm lại cho ra đúng các con số đã chốt.
+
+| # | Mục | Cách cài đặt đã chốt |
+|---|---|---|
+| 1 | `capacity_int_Ah` | Tích phân **`Current_measured`** (không dùng `Current_load`). Chỉ tính các mẫu có tải (I < −0,1 A): đổi dấu thành dương, các mẫu khác đặt bằng 0. Tích phân **hết chuỗi** bằng công thức hình thang theo `Time`: `Ah = Σ (y[k] + y[k−1]) / 2 · (t[k] − t[k−1]) / 3600`. Khi chạm cutoff dòng tải tự về khoảng 0, nên phần sau không đóng góp. |
+| 1b | `capacity_to_2p7V_Ah` (cột kiểm chứng) | Cùng công thức, nhưng **dừng** ở mẫu đầu tiên có `Voltage_measured < 2,7` (tính cả mẫu đó). |
+| 2 | "Không có lần sạc trước" | Lần xả bị loại nếu **không có lần sạc nào** có `op_index` nhỏ hơn hẳn trong cùng pin. Không yêu cầu lần sạc nằm sau lần xả trước. Ghép bằng `merge_asof(direction="backward", allow_exact_matches=False)` theo `op_index`, trong từng pin; EIS chen giữa không ảnh hưởng. Kiểm tra trên dữ liệu gốc: 23 lần xả không có sạc trước, 4 thuộc G8, còn **19**. |
+| 2b | Ngoại lệ đã biết của quy tắc 2 | Lần xả thứ 90 của B0005, B0006, B0007 nằm liền sau một lần xả khác, không có sạc ở giữa. Quy tắc chặt hơn sẽ loại thêm 3 dòng này. **Giữ quy tắc đã chốt** (không loại). Các cột `chg_*` và `rest_before_h` của 3 dòng này mô tả lần sạc trước lần xả trước đó. |
+| 3 | Segment | `I_load_mean_A` = trung bình \|I\| trên các mẫu có tải (I < −0,1 A). `I_level_A = round(I_load_mean_A)`. Với xung vuông, giá trị này là biên độ: B0025–27 ra 4 A, **B0028 ra 2 A**. Nhiệt độ lấy từ `ambient_temperature` của **chính thao tác xả** (`ambient_C`), không lấy từ EIS hay lần sạc. Khóa segment = (`ambient_C`, `I_level_A`); **22°C và 24°C là hai mức khác nhau** (không pin nào có cả hai, nên không ảnh hưởng kết quả). Segment mới bắt đầu khi khóa khác dòng hợp lệ liền trước của cùng pin; đánh số từ 1. |
+| 4 | C₀ | Tính riêng cho từng (pin, segment), trên các dòng **đã qua quy tắc loại bỏ**, **chưa** bỏ `cap_outlier` (cờ này tính sau C₀). `r = s.head(10).rolling(3, min_periods=1).median()` (trung vị trượt **về sau**, không căn giữa). C₀ = `r.iloc[2:].max()`; nếu segment có ít hơn 3 dòng thì C₀ = `r.max()`. |
+| 5 | Hampel | Trong từng (pin, segment), cửa sổ 7 **căn giữa**, `min_periods=3`: `med = x.rolling(7, center=True, min_periods=3).median()`; `mad = 1,4826 · |x − med|.rolling(7, center=True, min_periods=3).median()` (trung vị trượt của độ lệch so với chuỗi trung vị trượt). Gắn cờ khi `|x − med| > max(3·mad; 0,05)`. |
+| 6 | Sụt > 25% | Trong từng (pin, segment): `prev_max = x.shift().rolling(10, min_periods=3).max()`; gắn cờ khi `x < 0,75 · prev_max`. `cap_outlier` = Hampel **hoặc** sụt 25%. |
+| 7 | Thứ tự xét tier | **X → C → N → A → B** (thứ tự điều kiện trong `np.select`). Vì vậy B0054 (1 segment, 103 lần xả) rơi vào **N**, không vào A. |
+| 8 | Số dùng để xếp tier | Tính trên các dòng hợp lệ của pin, **đã bỏ `break_in`**: `n_valid` = số dòng (có tính `cap_outlier`), dùng cho "≥ 60 chu kỳ"; tỉ lệ outlier = `n_cap_outlier / n_valid`; `soh_min` bỏ thêm `cap_outlier`. Ví dụ: B0054 có `n_valid` = 94 (103 − 2 dòng bị loại − 7 break-in), 17 outlier = 18,1%; B0033 có `n_valid` = 190. |
+| 9 | Các cột còn thiếu định nghĩa | Xem từ điển dữ liệu ở [Introduction_of_dataset.md](Introduction_of_dataset.md) mục 6: `op_index`, `chg_op_index`, `cycle_valid`, `soh_last`, `cycles_to_soh80`, `fade_pct_per_100cyc`, `fade25_pct_per_100cyc`, `T_max_med`, `temp`. |
+
+**Con số đối chiếu bắt buộc** (bản làm lại phải ra đúng, nếu lệch thì phải tìm nguyên nhân trước khi dùng):
+
+| Mục | Giá trị |
+|---|---|
+| Dòng bị loại | G8: 100 · không có sạc trước: 19 · không chạm cutoff: 16 · dung lượng ngoài khoảng: 1 |
+| Dòng hợp lệ | **2.658** |
+| Cờ | `cap_outlier` 57 · `break_in` 17 · `long_rest` 167 |
+| Tier | A 12 · B 10 · C 7 · N 1 · X 4 |
+| C₀ mẫu (Ah) | B0005 1,852 · B0033 1,797 · B0054 1,483 |
+
+### 2.2 Chi tiết bổ sung khi làm lại pipeline (chốt ngày 26/10/2026)
+
+Các điểm dưới đây docs cũ chưa định nghĩa. Mỗi điểm được kiểm tra trên dữ liệu thật trước khi chốt; chi tiết và con số kiểm chứng ở [Work_log.md](Work_log.md).
+
+| # | Bước | Quyết định | Lý do / kiểm chứng |
+|---|---|---|---|
+| 1 | Đường dẫn dữ liệu | File `.mat`, `metadata.csv` và README gốc nằm trong `data/raw/`. **Không bao giờ commit dữ liệu gốc**; chỉ `data/raw/README.md` (link Google Drive) và `.gitkeep` lên repo. README gốc của dataset đổi tên thành `data/raw/README_dataset.md` để không đè file của repo. | Khớp README và Go.md; bản sao lưu nằm trên Google Drive |
+| 2 | Xả (bước 2) | `duration_s` = `Time[-1]`; `t_to_cutoff_s` = `Time` của mẫu có tải cuối cùng; `energy_Wh` = tích phân hình thang của V × dòng tải (chỉ mẫu có tải) / 3.600; `T_start_C` = nhiệt độ mẫu đầu; `T_max_C`, `T_mean_C` = max, mean trên toàn chuỗi | Không cần metadata nên tính được ngay khi parse |
+| 3 | Sạc (bước 3) | `chg_duration_s` = `Time[-1]`; `chg_end_time` = `start_time` + `chg_duration_s`; `chg_charge_Ah` = hình thang của I chỉ trên mẫu I > 0,1 A; `chg_cc_time_s` = `Time` của mẫu đầu tiên có `Voltage_measured` ≥ 4,2 V (NaN nếu không chạm: 5 lần sạc); `chg_T_max_C` = max nhiệt độ | `long_rest` ra đúng 167; tương quan `chg_cc_time_s`–SOH ở G1 = 0,859 (khớp F7). Phương án "mẫu cuối có dòng 1,4–1,6 A" bị loại vì ngưỡng tự đặt, không có trong quy trình. |
+| 4 | EIS (bước 4) | Re/Rct là số phức có phần ảo ≠ 0 thì đặt NaN (9 lần đo, đều thuộc G8). `impedance_ops.csv` giữ giá trị thô; lọc (0; 0,5) Ω làm ở bước làm sạch. | Kết quả fit hỏng không nên giữ một nửa |
+| 5 | Ghép (bước 5) | Thêm cột `n_chg_since_prev_dis`. Từ metadata chỉ lấy `group`, `discharge_cutoff_V` và `profile` (suy từ `discharge_protocol`). `build_dataset.py` tự kiểm tra bằng `assert`. | Trên dòng hợp lệ: 0 → 3 dòng, 1 → 2.639, 2 → 16. Cutoff trong metadata khớp dữ liệu ở cả 30 pin; chỉ G2 là xung vuông. |
+| 6 | Loại dòng (bước 6) | 136 dòng bị loại ghi vào `cycles_dropped.csv` kèm `drop_reason`; `cycles_clean.csv` không có cột này | Phục vụ review của Tiến Hưng (Go.md 1.6) |
+| 7 | `break_in` (bước 9) | "10 chu kỳ đầu" là **`cycle_valid` ≤ 10** (theo pin), không phải 10 dòng đầu mỗi segment | Theo pin ra 17 (khớp số đã chốt); theo segment ra 36, gắn cờ nhầm hiệu ứng đổi điều kiện |
+| 8 | Tier (bước 10) | `cycles_clean.csv` có cột `tier`. `battery_summary.csv` gồm cả 34 pin (pin X để trống cột thống kê). | Mỗi người lọc bằng `tier == "A"`, không chép tay danh sách pin |
+| 9 | `battery_fade.csv` (bước 11) | Thêm `n_used`, `n_used25` và các cột điều kiện để file tự đủ cho kiểm định | `fade25` của B0026 / B0033 / B0045 / B0054 chỉ dùng 22 / 19 / 23 / 15 điểm |
+
+Danh sách cột đầy đủ của mọi file đầu ra ở [Introduction_of_dataset.md](Introduction_of_dataset.md) mục 5–6.
 
 ---
 
