@@ -1,4 +1,4 @@
-# Work Log: Nhật ký quy trình làm việc của nhóm 4AnhTai
+﻿# Work Log: Nhật ký quy trình làm việc của nhóm 4AnhTai
 
 > **Mục đích:** Mỗi thành viên ghi lại chi tiết quá trình làm phần việc của mình trên branch riêng, để cả nhóm đọc được cách làm của nhau, và để làm nguồn tư liệu chính khi tổng hợp viết Full Report, IEEE Paper, slides và chuẩn bị thuyết trình.
 
@@ -205,3 +205,54 @@ Cả 3 script tự kiểm tra bằng `assert`. Nếu một con số đối chi�
 2. Bảng F5 (thay đổi dung lượng theo thời gian nghỉ) chưa tái tạo được (thử ra n = 1.167 / 701 / 64 / 66, trung vị nhóm > 1 ngày +0,0374 so với docs +0,0294). Đã ghi cảnh báo ở Introduction F5; kiểm tra lại khi viết phần EDA.
 3. `eda_dataset.py` mới có phần `battery_fade.csv`; còn thống kê mô tả, ADF và các hình.
 4. Push branch `khai-hung` và mở Pull Request vào `main` sau khi nhóm review (chưa làm).
+
+## Quoc Dat
+
+### 2026-11-01 — Hoàn thành hồi quy log-linear, đánh giá E1/E2 và kiểm tra
+
+**Mục tiêu.** Hoàn thiện phân tích hồi quy được giao trong notebooks/10_regression.ipynb, giữ lại các cell EDA và baseline đã có, sau đó chạy notebook từ đầu đến cuối theo giao thức chung.
+
+**Dữ liệu.** Dùng data/processed/cycles_clean.csv; lọc tier A, bỏ cap_outlier và break_in theo README dữ liệu đã xử lý. Tập hồi quy có 1.475 dòng từ 12 pin. profile chỉ có một mức constant_current nên không đưa vào mô hình. T_max_C không dùng làm predictor độc lập vì là phản ứng nhiệt có tương quan với điều kiện vận hành. Condition table cho thấy thiết kế không có đủ mọi tổ hợp ambient/current/cutoff.
+
+**So sánh dạng hàm.** Kiểm tra toàn bộ soh dương trước khi tạo ln_soh. So sánh soh ~ cycle_valid, ln(soh) ~ cycle_valid và soh ~ cycle_valid + I(cycle_valid ** 2). R² lần lượt là 0,4693; 0,4552; 0,5248. RMSE trên thang SOH lần lượt là 0,06241; 0,06178 (log-linear dùng smearing correction); 0,05906. AIC/BIC của mô hình tuyến tính SOH là -3993,45/-3982,86; log-linear là -3383,46/-3372,87; quadratic là -4154,44/-4138,55. AIC/BIC giữa SOH và ln(SOH) không so sánh trực tiếp vì khác thang đáp ứng. Hệ số cycle của log-linear đơn là -0,001412, tương ứng giảm xấp xỉ 0,1411% SOH mỗi chu kỳ trong mô hình đơn, không phải tác động nhân quả.
+
+**Mô hình bội và lựa chọn.** Tạo cycle_c, current_c và cutoff_c bằng cách trừ trung bình mẫu; centering giảm đa cộng tuyến không cần thiết và làm main effects ứng với mức chu kỳ/dòng/cutoff trung bình. Mô hình ứng viên có tương tác cycle × ambient, cycle × current và cycle × cutoff. Backward selection dùng kiểm định Wald theo nhóm main effect + interaction, giữ cycle main effect và phân cấp tương tác; chỉ số tham số được xác định qua fit.params.index với restriction matrix tường minh. Mô hình được chọn:
+
+```text
+ln_soh ~ cycle_c + C(ambient_C) + cycle_c:C(ambient_C)
+       + current_c + cycle_c:current_c
+       + cutoff_c + cycle_c:cutoff_c
+```
+
+Mô hình có R² = 0,7467; adjusted R² = 0,7455; AIC = -4501,13; BIC = -4458,76. Sai số chuẩn gom cụm theo battery_id cho 12 cụm chỉ là phân tích độ nhạy. Ba tương tác có p-value gom cụm lần lượt 0,0811 (ambient 24°C so với mức tham chiếu), 0,0744 (mỗi A chênh lệch dòng), và 0,3229 (mỗi V chênh lệch cutoff); các CI 95% đều chứa 0. Dấu và độ lớn OLS thường không đủ để kết luận tương tác khi xét phụ thuộc trong pin. Hệ số cycle_c là -0,001210 (p gom cụm 0,0214; CI [-0,002203; -0,000216]) tại nhiệt độ tham chiếu và mức current/cutoff trung bình. Main effects trong mô hình tương tác là có điều kiện.
+
+**Chẩn đoán.** VIF lớn nhất là 13,48 cho cycle_c và 12,53 cho cycle_c × ambient; các VIF còn lại tối đa 2,58. Breusch–Pagan LM = 367,79, p = 1,91×10⁻⁷⁵, cho thấy phương sai phần dư không đồng nhất. Có 87 điểm vượt ngưỡng Cook’s distance 4/n; leverage lớn nhất là 0,0180. Durbin–Watson theo pin rất thấp ở nhiều chuỗi (ví dụ B0007 = 0,0063), chỉ ra tự tương quan phần dư mạnh. Vì vậy 1.475 chu kỳ không thể xem là các đơn vị độc lập; cluster inference với 12 pin cũng có độ bất định đáng kể.
+
+**Hồi quy mức pin.** data/processed/battery_fade.csv có 23 pin. Với fade_pct_per_100cyc ~ ambient_C + I_level_A + discharge_cutoff_V, R² = 0,4349 và adjusted R² = 0,3456. HC3: ambient_C = 0,6915 (SE 0,1727; p = 0,000062; CI [0,3531; 1,0299]); I_level_A = -8,6521 (SE 2,2081; p = 0,000089; CI [-12,9799; -4,3244]); cutoff = -12,1916 (SE 7,8670; p = 0,1212; CI [-27,6106; 3,2275]). Với fade25_pct_per_100cyc, R² = 0,3579, adjusted R² = 0,2566; không predictor nào có p < 0,05. Số pin nhỏ và điều kiện thí nghiệm không factorial đầy đủ nên không diễn giải như các tác động độc lập chắc chắn.
+
+**E1/E2.** Áp dụng đúng train/test cells trong Rec.md; bước chọn predictor và centering cho đánh giá chỉ dùng 8 pin train. Test gồm B0007, B0034, B0047, B0055. Chuyển dự đoán ln(SOH) về thang SOH bằng exp trước khi tính metric. Trung bình theo pin: regression E1/E2 có MAE 0,08376, RMSE 0,08902, MAPE 10,516%, R² -21,507; persistence E1 có MAE 0,01412, RMSE 0,02014, MAPE 1,698%, R² 0,0447; persistence E2 có MAE 0,02382, RMSE 0,02997, MAPE 2,987%, R² -0,8717. E1 và E2 của regression trùng nhau vì mô hình trực tiếp dùng cycle/điều kiện, không dùng dự đoán SOH bước trước làm feature. EOL error E2 là 24 chu kỳ cho B0007 và 27 cho B0047; dự báo không chạm 0,8 trong phạm vi dự báo cho B0034 và B0055. y_lower/y_upper để trống vì mô hình điểm không xuất khoảng dự đoán.
+
+**Đầu ra và kiểm chứng.** Notebook có 37 cell sau khi thêm 14 cell mới; nguồn của 23 cell đầu được giữ nguyên ngoài sửa đường dẫn PROJECT_ROOT ở cell 2 để lệnh chạy từ repository root hoạt động (vẫn tự nhận thư mục notebooks nếu chạy từ đó). Chạy lệnh nbconvert theo yêu cầu với PowerShell alias py; notebook hoàn thành, 19 cell code đã chạy, không có error output. Đã kiểm tra source 23 cell đầu giữa notebook gốc và executed copy. Tệp dự báo reports/predictions/regression.csv có 426 dòng (213 E1, 213 E2). Hình được tạo: reports/figures/regression_functional_forms.png, regression_simple_diagnostics.png, regression_preferred_diagnostics.png. Bản notebook có output: notebooks/10_regression.ipynb.
+
+**Giới hạn.** Mô hình log-linear yếu hơn persistence trên các pin test và có R² âm mạnh; không nên dùng kết quả như dự báo tổng quát hóa tốt. Condition structure thiếu tổ hợp chéo, VIF tương tác còn vượt 10, phần dư heteroskedastic và tự tương quan. Các kết quả là liên hệ có điều kiện, không chứng minh nguyên nhân.
+
+**Tệp thay đổi.** notebooks/10_regression.ipynb; reports/figures/regression_functional_forms.png; reports/figures/regression_simple_diagnostics.png; reports/figures/regression_preferred_diagnostics.png; reports/predictions/regression.csv; docs/Work_log.md.
+
+### 2026-11-01 - SEM / Path Analysis
+
+**Objective.** Completed the SEM/path-analysis work in `notebooks/50_sem.ipynb` to examine associations among operating conditions, EIS resistance measurements, and SOH. Results are interpreted as statistical associations rather than causal effects.
+
+**Data.** Used new EIS observations from Tier A/B batteries. After complete-case filtering for `ambient_C`, `I_level_A`, `discharge_cutoff_V`, `Re_ohm`, `Rct_ohm`, `soh`, and `cycle_valid`, the SEM dataset contained 812 observations from 22 batteries with no missing values in the analysis variables. New-EIS filtering avoids treating carried-forward EIS values as fresh measurements.
+
+**Model.** The observed-variable path model includes paths from operating conditions to `Re_ohm` and `Rct_ohm`. `Re_ohm`, `Rct_ohm`, operating conditions, and `cycle_valid` are then used to explain `ln_soh`. semopy used MLW with SLSQP optimization and converged successfully after 113 iterations.
+
+**Path results.** Notable standardized associations were `Re_ohm -> ln_soh` = 0.1045 (p = 0.0041), `Rct_ohm -> ln_soh` = -0.3489 (p < 0.001), `ambient_C -> ln_soh` = -0.2645 (p < 0.001), `I_level_A -> ln_soh` = 0.1722 (p < 0.001), and `cycle_valid -> ln_soh` = -0.6559 (p < 0.001). The direct `discharge_cutoff_V -> ln_soh` path was not significant at the 5% level (p = 0.1822).
+
+**Model fit.** Fit statistics were chi-square = 479.29 with 13 degrees of freedom, CFI = 0.9235, GFI = 0.9217, NFI = 0.9217, TLI = 0.8529, and RMSEA = 0.2103. The high RMSEA and relatively low TLI indicate that overall model fit is not strong, so the model should not be treated as a complete representation of the data-generating structure.
+
+**Direct, indirect, and total associations.** Point estimates of the total associations with `ln_soh` were approximately 0.00008 for ambient temperature, 0.02574 for discharge current, and 0.03262 for cutoff voltage. Battery-block bootstrap completed 200 successful replicates with zero failures. The 95% bootstrap intervals for the direct, indirect, and total associations of all three operating-condition predictors contained zero, indicating substantial uncertainty between batteries.
+
+**Limitations.** Repeated EIS observations within the same battery are dependent, and the operating-condition design does not contain all factorial combinations. The SEM coefficients therefore represent conditional associations rather than causal effects. Battery-block bootstrap results are used to assess uncertainty more conservatively.
+
+**Output and verification.** `notebooks/50_sem.ipynb` contains 12 cells, including 6 code cells. All 6 code cells were executed successfully with no error outputs. The path diagram was saved to `reports/figures/sem_path_diagram.png`.
+
