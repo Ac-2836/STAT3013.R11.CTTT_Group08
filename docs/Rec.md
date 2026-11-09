@@ -159,6 +159,21 @@ Danh sách cột đầy đủ của mọi file đầu ra ở [Introduction_of_da
 
 **Sensitivity (tạm chốt):** từ dự báo của mỗi mô hình, suy ra cảnh báo "pin chạm EOL trong 20 chu kỳ tới (có/không)", rồi tính sensitivity, specificity và confusion matrix theo Chap 4. Không fit thêm mô hình thứ 5. Người làm: Khải Hưng, trong giai đoạn so sánh mô hình.
 
+### 6.1 Chi tiết thực thi giao thức (chốt ngày 02/11/2026)
+
+Giao thức ở bảng trên đã được cài trong `src/protocol.py` (`load_split()`, `naive()`, `evaluate()`). Bảng dưới chốt các điểm bảng trên chưa định nghĩa.
+
+| # | Mục | Quyết định | Lý do / kiểm chứng |
+|---|---|---|---|
+| 1 | Mốc 60% | Tính **theo số dòng** của từng pin test, làm tròn xuống: `pos >= int(n · 0,6)` là dòng đánh giá (cột `is_eval`). E1 và E2 dự báo đúng cùng các dòng này. | `cycle_valid` có thể nhảy số do đã bỏ outlier. Ra 213 dòng đánh giá (B0007 67, B0034 78, B0047 28, B0055 40). |
+| 2 | Chạm EOL | Chu kỳ đầu tiên có SOH **< 0,8** (nhỏ hơn hẳn) | Giống cách tính `cycles_to_soh80` trong `eda_dataset.py` |
+| 3 | Pin tính sai số RUL | **B0007, B0034, B0055**. B0047 chỉ dùng cho E1. | B0047 đã xuống dưới 0,8 trước mốc 60%, nên không còn RUL để dự báo. B0034 (min 0,799) và B0055 (min 0,791) chạm sát ngưỡng; báo cáo phải ghi chú. |
+| 4 | Biến mục tiêu của mọi mô hình | `soh`, **kể cả ARIMA** (trước đây Go.md 5b.1 dùng `capacity_int_Ah`) | Tier A chỉ có 1 segment nên `soh = capacity_int_Ah / C₀` với C₀ cố định: chỉ là đổi thang, Box-Jenkins giữ nguyên. `evaluate()` từ chối file có `y_true` không phải `soh`. |
+| 5 | Biến ngoại sinh ở E2 | Giữ nguyên **giá trị đo cuối cùng trước mốc 60%** cho mọi bước dự báo; chỉ lag SOH được cập nhật bằng giá trị dự báo. Áp dụng chung cho SVR, LSTM và ARIMAX. | Không dùng dữ liệu tương lai; dùng được ngoài thực tế |
+| 6 | Re/Rct bị thiếu | Bỏ các cửa sổ/dòng huấn luyện có NaN, **không điền** | NaN chỉ có ở 19 chu kỳ đầu của B0005, B0006, B0007 (chưa có lần đo EIS nào); các dòng đánh giá không thiếu. Điền bằng lần đo đầu tiên là lấy dữ liệu tương lai, trái mục 2 #7. |
+| 7 | Validation của LSTM | `GroupKFold` theo pin, k = 4, như SVR. Early stopping dùng fold validation. | Đúng bảng trên; Go.md 5d.3 (giữ 1 pin train) đã sửa cho khớp |
+| 8 | Mục tiêu học của LSTM | Mạng dự báo **ΔSOH** = SOH_t − SOH_{t−1}, rồi cộng vào SOH_{t−1} để ra SOH. File dự báo vẫn ghi SOH. | Tránh việc LSTM học cách chép lại giá trị trước (chỉ ngang naive). Không đổi định dạng dự báo chung. |
+
 ---
 
 ## 7. Demo video và Streamlit (chốt ngày 26/10/2026)
