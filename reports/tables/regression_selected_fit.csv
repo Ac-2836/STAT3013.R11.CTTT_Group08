@@ -1,0 +1,2 @@
+formula,R2,adjusted_R2,F,F_p,BP_LM,BP_p,JB,JB_p,max_leverage
+ln_soh ~ cycle_c + C(ambient_C) + current_c + cutoff_c + cycle_c:C(ambient_C) + cycle_c:current_c + cycle_c:cutoff_c,0.9036963574787673,0.90297843895092,1258.7728585143338,0.0,138.47855461109887,1.0587748394092288e-26,10.184206918998067,0.006145080355403454,0.030730740444598375

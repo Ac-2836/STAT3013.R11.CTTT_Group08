@@ -1,0 +1,17 @@
+battery_id,feature,train_min,train_max,test_min,test_max,outside_global_train
+B0007,cycle_valid,1.0,196.0,1.0,168.0,0
+B0007,ambient_C,4.0,24.0,24.0,24.0,0
+B0007,I_level_A,1.0,4.0,2.0,2.0,0
+B0007,discharge_cutoff_V,2.0,2.7,2.2,2.2,0
+B0034,cycle_valid,1.0,196.0,1.0,196.0,0
+B0034,ambient_C,4.0,24.0,24.0,24.0,0
+B0034,I_level_A,1.0,4.0,4.0,4.0,0
+B0034,discharge_cutoff_V,2.0,2.7,2.2,2.2,0
+B0047,cycle_valid,1.0,196.0,1.0,68.0,0
+B0047,ambient_C,4.0,24.0,4.0,4.0,0
+B0047,I_level_A,1.0,4.0,1.0,1.0,0
+B0047,discharge_cutoff_V,2.0,2.7,2.5,2.5,0
+B0055,cycle_valid,1.0,196.0,1.0,101.0,0
+B0055,ambient_C,4.0,24.0,4.0,4.0,0
+B0055,I_level_A,1.0,4.0,2.0,2.0,0
+B0055,discharge_cutoff_V,2.0,2.7,2.5,2.5,0

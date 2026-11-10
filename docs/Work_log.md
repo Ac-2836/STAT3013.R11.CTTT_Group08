@@ -256,3 +256,103 @@ Mô hình có R² = 0,7467; adjusted R² = 0,7455; AIC = -4501,13; BIC = -4458,7
 
 **Output and verification.** `notebooks/50_sem.ipynb` contains 12 cells, including 6 code cells. All 6 code cells were executed successfully with no error outputs. The path diagram was saved to `reports/figures/sem_path_diagram.png`.
 
+
+
+### [10/11/2026] Quốc Đạt · branch `quoc-dat` · Audit Regression và SEM (bắt đầu 09/11)
+
+**Bối cảnh và bảo toàn.** Yêu cầu audit trực tiếp Regression/SEM, không commit/push/merge. Đã kiểm tra status/branch/log;
+branch đúng `quoc-dat`, HEAD `73452fd`. Working copy có SEM, regression CSV thay đổi và regression.test chưa track.
+Đã sao lưu các bản này cùng notebook/hình cũ vào `reports/audit/regression_sem_before/`, giữ `preexisting.patch` và bản HEAD riêng.
+Không sửa pipeline/dataset/giao thức của Leader hay mô hình thành viên khác. Chỉ thêm nội dung vào phần Quốc Đạt này.
+
+**Nguồn số liệu và phương pháp.** Đọc README/Rec/Go/WBS/Work_log/Introduction, requirements, hai notebook,
+cycles_clean/battery_fade/prediction CSV và ba module build/clean/eda. Ưu tiên Rec; seed 42, test/train giữ nguyên.
+Python 3.11.16; version package và SHA256 từng input/output ở `regression_sem_execution.json`;
+dependency lock riêng để không thay requirements chung. Script runner dùng fresh kernels từ root và notebooks.
+
+**Regression.** Sửa simple thành G1 train (n=465, 3 pin), không fit test B0007;
+R²=0.861688, adjusted R²=0.861390, F=2884.511506. Xuất conventional/cluster SE, p/CI, residual/standardized QQ/BP/JB/DW.
+Thêm Re/Rct/charge duration correlations và design VIF; r Re–Rct train=0.510722, G1 train=0.953088.
+Full research log-linear giữ dummy/interaction; backward kiểm định term có hierarchy, covariance cluster, theo dõi adjusted R² từng bước,
+OLS là sensitivity. Chưa có slide Chap3 p39 để xác nhận nguyên văn bốn bước. Smearing train-only; AIC log model đổi về SOH density bằng Jacobian.
+Xác minh cả full/25-cycle slopes của 23 battery_fade; HC3 với t inference, n nhỏ và slope uncertainty được nêu rõ.
+GroupKFold4 train-only thử đúng 5 candidate có cơ sở: full/selected/quadratic log-linear và 2 anchored variants.
+CV chọn E1=anchored_loglinear, E2=anchored_quadratic; không thay lựa chọn sau khi nhìn test.
+
+| model | scenario | MAE | RMSE | MAPE_pct | R2 |
+| --- | --- | --- | --- | --- | --- |
+| persistence | E1 | 0.0141225 | 0.0201418 | 1.69765 | 0.0447127 |
+| persistence | E2 | 0.0238145 | 0.0299687 | 2.9871 | -0.871726 |
+| preaudit_working_copy | E1 | 0.0837614 | 0.0890195 | 10.516 | -21.5069 |
+| preaudit_working_copy | E2 | 0.0837614 | 0.0890195 | 10.516 | -21.5069 |
+| regression | E1 | 0.0137394 | 0.0202341 | 1.64797 | 0.0446581 |
+| regression | E2 | 0.0335355 | 0.0420071 | 4.17526 | -2.75718 |
+| research_loglinear | E1 | 0.0839132 | 0.0891713 | 10.5348 | -21.5502 |
+| research_loglinear | E2 | 0.0839132 | 0.0891713 | 10.5348 | -21.5502 |
+
+E1 chỉ thắng nhẹ persistence MAE, không thắng RMSE; E2 vẫn kém persistence. Global uncalibrated model chưa giải quyết heterogeneity.
+Giữ kết quả cũ và toàn bộ candidate. CSV chung 426 dòng/8 cột, 213 dòng mỗi scenario, intervals NaN.
+Xuất cả micro/macro/per-battery; forecasts plot có threshold .8. EOL dùng first SOH≤.8; B0047 đã event cycle30 trước origin40,
+bỏ RUL/error không hợp lệ, giữ đủ mọi battery và explicit no-crossing status, không extrapolate horizon.
+E1 là next retained clean observation; centered Hampel/lifetime Tier là upstream retrospective constraints, không tự sửa protocol.
+
+**SEM.** Join từng EIS operation thực, không đếm ffill thành measurement; 812 điểm/22 pin, 14 dòng có quality flag được giữ
+trong primary để đối chiếu mẫu gốc; sensitivity bỏ flag còn 798. 137 measurement của discharge4°C có EIS ambient24°C.
+Sửa root path; kiểm tra convergence/rank/variance. Đếm tường minh 10 nuisance exogenous moments: primary25 parameter/28 moment, df3.
+Internal z scaling và đổi coefficient/SE về đơn vị gốc; test đổi A thành mA kiểm tra scale. Bản raw-unit solver có thể success ở objective kém;
+không dùng nó thay historical output. Primary theoretical graph không đổi; sensitivity age→mediators và shared Re/Rct residual có lý do vật lý.
+Model thêm cả hai là saturated df0, không coi fit đẹp là xác nhận theory.
+
+| DoF | chi2 | CFI | TLI | RMSEA |
+| --- | --- | --- | --- | --- |
+| 13 | 479.29 | 0.923489 | 0.852863 | 0.210303 |
+
+Primary mới: χ²=479.289894, df=3, CFI=0.851816, TLI=-0.037285, RMSEA=0.442450.
+Khác biệt indices có sửa cả df/baseline; fit vẫn kém, repeated rows khiến IID fit tests chỉ descriptive.
+Bootstrap sample theo pin, có duplicate block multiplicity, seed42, target200 valid/max500; thực tế 200/200
+hợp lệ và 0 failure. Xuất attempts/solver checks/SE/CI95 cho từng đường, direct/Re/Rct/combined/total;
+tất cả condition-effect CI chứa0, không kết luận mediation significant/nhân quả, không tính unstable mediation% khi total≈0.
+Sơ đồ 320dpi + vector PDF: từng predictor thật, mũi tên và standardized coefficient khớp CSV model, không hard-code estimates.
+
+**Đầu ra và kiểm chứng.** Hai notebook lưu outputs fresh, [{"notebook": "10_regression.ipynb", "code_cells": 13, "error_outputs": 0}, {"notebook": "50_sem.ipynb", "code_cells": 4, "error_outputs": 0}]; exact numerical reproduction
+root vs notebooks=True; input unchanged=True.
+Validation: {"date": "2026-11-10", "branch": "quoc-dat", "tests": 17, "failures": 0, "errors": 0, "syntax_checked_files": 6, "notebooks": [{"name": "10_regression.ipynb", "executed_code_cells": 13, "error_outputs": 0}, {"name": "50_sem.ipynb", "executed_code_cells": 4, "error_outputs": 0}], "protected_group_files_unchanged": true, "preexisting_test_notebook_unchanged": true, "processed_input_hashes_unchanged": true, "numerical_output_hashes_match": true, "exact_reproduction_across_working_directories": true}. Đã inspect trực quan forecast/path/residual figures và kiểm tra dependency compatibility.
+Lệnh tái lập và toàn bộ findings/WBS/review checklist: `docs/Regression_SEM_Audit.md`;
+methods/results + IEEE-ready text: `docs/Regression_Report.md`, `docs/SEM_Report.md`.
+Các file mới `src/regression_analysis.py`, `sem_analysis.py`, `regression_sem_utils.py`, `run_regression_sem.py`,
+`write_regression_sem_reports.py`, `tests/test_regression_sem.py`, lock, tables và figures đều chỉ phục vụ hai phần này.
+
+**Giới hạn và review còn lại.** Các thay đổi là phiên bản đề xuất để Quốc Đạt/Tiến Hưng/Leader review, không phải quyết định nhóm đã duyệt.
+C3.1–C3.8, C7.2–C7.4 đã có code/output/nội dung báo cáo; C3.5 còn đối chiếu slide, C7.1 còn nhóm đồng ý theory paths,
+và còn tích hợp deliverable, review chéo. Không thể làm E2 thắng baseline hoặc SEM fit tốt bằng sửa code hợp lệ trong phạm vi này.
+Giữ trung thực các hạn chế n nhỏ, confounding, serial dependence, retrospective cleaning và chưa có prediction intervals.
+
+### [10/11/2026] Quốc Đạt · Final stabilization Regression/SEM · `quoc-dat`
+
+Đã tách historical archive thành comparison tùy chọn; giữ fit/CV/current metrics/prediction export độc lập.
+SEM vẫn chạy đủ 6 specifications, bootstrap 200 valid, bảng và sơ đồ khi thiếu notebook cũ.
+Kiểm tra toàn chuỗi 12 pin Tier A: cả ambient/current/cutoff đều cố định (36/36 checks).
+E2 lấy condition values tại origin, từ chối điều kiện thay đổi hoặc không hữu hạn; test synthetic xác nhận fail rõ ràng.
+CSV chung giữ 426 dòng/8 cột, `model=regression`; metadata ghi E1 anchored_loglinear và E2 anchored_quadratic,
+hai bộ hệ số khác nhau, anchor chỉ dùng SOH được phép của chính pin test. Giữ research/baseline riêng.
+
+28 tests PASS, 0 failure/error; compile 6 Python files và notebook cells; 98 dependency constraints không vi phạm
+trong .venv hiện có (không có pip, dùng importlib.metadata/packaging). Hai notebook chạy đủ từ root và notebooks/,
+13+4 code cells, 0 errors, CSV/JSON số học khớp tuyệt đối. Repo copy không archive chạy đủ hai notebook và sinh báo cáo;
+57 current CSV khớp từng byte. 35 protected file hashes không đổi, gồm dữ liệu/pipeline/Rec/archives/test notebook.
+Đã xem forecast/path figures; git diff --check đạt. Không commit/push/merge/PR.
+
+Regression macro E1 MAE/RMSE=0.0137394/0.0202341 (persistence 0.0141225/0.0201418);
+E2=0.0335355/0.0420071 (persistence 0.0238145/0.0299687). E2 vẫn kém baseline.
+Primary SEM χ²=479.289894, df3, CFI0.851816, TLI−0.037285, RMSEA0.442450; fit vẫn kém.
+Bootstrap 200/200 valid, 0 failures; toàn bộ 15 condition-effect CI chứa0. Ưu tiên block CI, không dựa riêng IID p-values;
+812 observations chỉ là 22 independent batteries, không kết luận causal mediation.
+
+Đối chiếu file bảo toàn: prediction max delta6.85e−14, bootstrap CI endpoint max delta6.13e−7.
+Source chưa sửa trong bản đối chứng tái tạo đúng outputs mới. Raw-unit sensitivity thay objective≈0.590259 thành6.242571
+do nghiệm nhạy scale; source đối chứng cũng tái tạo kết quả đó, không đổi primary estimator hay protocol để cải thiện metric.
+Current tables bỏ historical rows; historical metrics/status lưu riêng. Chi tiết và file list:
+`docs/Regression_SEM_Audit.md`, `reports/audit/regression_sem_final_validation.json` và `regression_sem_final_tests.log`.
+Nhóm còn review scenario-specific strategy/anchoring, slide p39, theory paths và tích hợp Model Comparison;
+các giới hạn retrospective cleaning, ít pin, confounding, thiếu prediction intervals và E2 yếu vẫn giữ nguyên.
+

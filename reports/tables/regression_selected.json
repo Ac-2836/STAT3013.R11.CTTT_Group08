@@ -1,0 +1,24 @@
+{
+  "winners": {
+    "E1": "anchored_loglinear",
+    "E2": "anchored_quadratic"
+  },
+  "means": {
+    "cycle_valid": 70.63569165786694,
+    "I_level_A": 2.1615628299894403,
+    "discharge_cutoff_V": 2.4200633579725452
+  },
+  "formulas": {
+    "research_loglinear": "ln_soh ~ cycle_c + C(ambient_C) + current_c + cutoff_c + cycle_c:C(ambient_C) + cycle_c:current_c + cycle_c:cutoff_c",
+    "selected_loglinear": "ln_soh ~ cycle_c + C(ambient_C) + current_c + cutoff_c + cycle_c:C(ambient_C) + cycle_c:current_c + cycle_c:cutoff_c",
+    "quadratic_loglinear": "ln_soh ~ cycle_c + C(ambient_C) + current_c + cutoff_c + cycle_c:C(ambient_C) + cycle_c:current_c + cycle_c:cutoff_c + I(cycle_c ** 2)"
+  },
+  "strategy": "scenario-specific regression forecasting; separate fitted variants",
+  "exported_model": "regression",
+  "anchors": {
+    "E1": "preceding retained observed SOH of this evaluation battery",
+    "E2": "fixed origin observed SOH of this evaluation battery"
+  },
+  "condition_policy": "fixed Tier A conditions validated; E2 values read at origin only",
+  "selection_metric": "mean held-out battery MAE; GroupKFold(4), training batteries only"
+}
