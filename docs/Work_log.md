@@ -114,3 +114,75 @@
 - C5.8: viết Report §3.4, §5.4.
 - Gửi Quốc Đạt review notebook.
 - Báo leader về biến cờ EIS và việc Go.md 5b.3 ghi khoảng p-value của ADF chưa khớp dữ liệu hiện tại.
+
+### [11/11/2026] Tiến Hưng · branch `tien-hung` · GĐ3 Thống kê suy diễn (WBS C2.1–C2.8)
+
+**Nguồn của mọi con số:** `notebooks/02_inferential.ipynb` (Restart & Run All; scipy 1.18.1, statsmodels 0.15.0). Input: `data/processed/battery_fade.csv` (đơn vị quan sát là pin) và `cycles_clean.csv` (cho CI tỉ lệ và chi-square). C2.4 (Quốc Đạt), C2.6 (Minh Vũ) và C2.7 (Khải Hưng) cũng đã làm trong notebook này để GĐ3 có đủ một chỗ; các thành viên phụ trách vui lòng review phần của mình.
+
+**1. Mẫu**
+- 23 pin trong `battery_fade.csv`. Loại B0054 (tier N, 18,1% outlier; Go.md 3.2 đã ghi G9 "không gồm B0054") và B0028 (xung vuông biên độ 2 A, là pin duy nhất của điều kiện này nên không có phương sai trong nhóm). Còn **21 pin trong 6 nhóm điều kiện**.
+- Nhóm theo điều kiện (nhiệt độ môi trường / dạng tải / mức dòng), không theo nhóm G: 24C/CC/2A = G1 + B0036 (n = 5), 24C/CC/4A = B0033, B0034 (2), 24C/SQ/4A = B0025–27 (3), 43C/CC/4A = G3 (4), 4C/CC/1A = G7 (4), 4C/CC/2A = B0053, B0055, B0056 (3). B0036 được gộp vào vì cùng điều kiện với G1, giống bảng ở Introduction_of_dataset.md mục 8.
+- Mọi kiểm định chạy trên cả `fade_pct_per_100cyc` (fade) và `fade25_pct_per_100cyc` (fade25). α = 0,05.
+
+**2. CI (C2.1)**
+- CI t, df = n − 1, cho trung bình từng nhóm (bảng `reports/tables/inference_ci.csv`). Ví dụ fade: 43C/CC/4A 28,37 (20,99–35,75); 4C/CC/1A 29,93 (25,11–34,76); 24C/CC/4A (n = 2, t = 12,706) 8,27 (−9,95 đến 26,50).
+- CI tỉ lệ các lần xả có SOH tăng so với lần trước, trên 22 pin tier A/B (bỏ `cap_outlier`, `break_in`): 562/1.966 = 28,6%, CI z 26,6–30,6%. Vì các lần xả trong một pin không độc lập (F9), tính thêm CI dựa trên đơn vị pin (trung bình tỉ lệ của từng pin, t với df = 21): 26,7% (22,3–31,1%), rộng hơn khoảng 2,2 lần.
+
+**3. T1–T4 (C2.2–C2.3)**
+- Quy trình định trước: F-test hai phía (tr. 51) quyết định pooled hay Welch; Levene (`center="median"`) chỉ để đối chiếu. T1 là một phía (Ha: μ43 > μ24), nêu trước dựa trên cơ chế Arrhenius/SEI; các cặp còn lại hai phía.
+- Ở T2 và T3 (fade), F-test bác bỏ phương sai bằng nhau (p = 0,0064 và 0,036) còn Levene thì không (p = 0,29 và 0,43), vì nhóm 4C/CC/2A có sd rất nhỏ (0,41). Theo quy trình, các cặp này dùng Welch.
+
+| Cặp | Biến | Loại t | T | df | p | Chênh lệch (CI 95%) | Kết luận |
+|---|---|---|---|---|---|---|---|
+| T1 43 °C vs 24 °C, 4 A (một phía) | fade | pooled | 5,603 | 4 | 0,0025 | 20,10 (10,14–30,06) | bác bỏ H0 |
+| | fade25 | pooled | 1,495 | 4 | 0,1046 | 7,74 (−6,64–22,13) | không bác bỏ |
+| T2 24 °C vs 4 °C, 2 A | fade | Welch | 2,440 | 4,04 | 0,0706 | 7,94 (−1,06–16,94) | không bác bỏ |
+| | fade25 | pooled | −1,485 | 6 | 0,1881 | −13,51 (−35,78–8,75) | không bác bỏ |
+| T2b chỉ G1 vs 4 °C, 2 A | fade | Welch | 6,886 | 3,14 | 0,0054 | 10,95 (6,01–15,89) | bác bỏ H0 |
+| | fade25 | pooled | −1,135 | 5 | 0,3080 | −10,99 (−35,90–13,91) | không bác bỏ |
+| T3 1 A vs 2 A, 4 °C | fade | Welch | 13,017 | 3,15 | 0,0008 | 19,98 (15,22–24,74) | bác bỏ H0 |
+| | fade25 | pooled | 3,773 | 5 | 0,0130 | 36,84 (11,74–61,95) | bác bỏ H0 |
+| T4 xung vuông vs CC, 24 °C/4 A | fade | pooled | 0,695 | 3 | 0,5369 | 2,67 (−9,54–14,87) | không bác bỏ |
+| | fade25 | pooled | −1,833 | 3 | 0,1642 | −10,38 (−28,40–7,64) | không bác bỏ |
+
+- Chỉ **T3** vững qua cả hai biến. T1 có ý nghĩa ở fade nhưng không có ở fade25: G3 chỉ có 39 chu kỳ, còn B0033/B0034 có khoảng 180–194 chu kỳ với đoạn chững lại kéo độ dốc cả chuỗi xuống, nên fade so sánh không công bằng. T2 phụ thuộc việc có gộp B0036 (fade 5,86) hay không.
+
+**4. ANOVA (C2.4)**
+- 6 nhóm, 21 pin. fade: F(5,15) = 12,686, p = 0,0001. fade25: F(5,15) = 12,668, p = 0,0001. Bảng ANOVA tự tính (SS, df, MS, F, F_crit = 2,9013) đã được `assert` khớp với `scipy.stats.f_oneway`.
+- Giả định: Levene p = 0,763 (fade) và 0,686 (fade25). Shapiro-Wilk trên phần dư p = 0,042 (fade) và 0,612 (fade25). Vì fade vi phạm giả định chuẩn, chạy thêm Kruskal-Wallis: H = 15,55 (p = 0,0082) và 13,12 (p = 0,0223). Kết luận không đổi.
+- Tukey HSD: fade có 7 cặp khác nhau, fade25 có 5 cặp. 4C/CC/1A khác 24C/CC/2A, 24C/CC/4A, 24C/SQ/4A và 4C/CC/2A ở cả hai biến. Riêng 43C/CC/4A khác 24C/CC/4A, 24C/SQ/4A và 4C/CC/2A ở fade, nhưng ở fade25 chỉ khác 4C/CC/1A.
+
+**5. Two-way ANOVA (C2.5)**
+- Bảng số pin theo ô (CC, mẫu chính), 4/9 ô trống:
+  - 4 °C: 1 A = 4, 2 A = 3, 4 A = 0
+  - 24 °C: 1 A = 0, 2 A = 5, 4 A = 2
+  - 43 °C: 1 A = 0, 2 A = 0, 4 A = 4
+- Không ước lượng được tương tác, và hiệu ứng nhiệt độ bị lẫn với dòng xả. Đoạn giải thích đầy đủ nằm ở mục 5 của notebook.
+
+**6. Chi-square (C2.6)**
+- **Phát hiện:** lý do chọn W = 40 trong Go.md 3.5 ("số chu kỳ ngắn nhất của G3") không khớp dữ liệu. G3 chỉ có `cycle_valid` 1–39, còn G2 (B0025–27) chỉ tới 28. Với W = 40, các pin này được quan sát thiếu.
+- **Bản chính W = 25 (21 pin):** quan sát "có / không" theo nhiệt độ là 4 °C 6/1, 24 °C 1/9, 43 °C 0/4. χ² = 13,093, df = 2, p = 0,0014; p hoán vị (20.000 lần, seed 42) = 0,0014. 5/6 ô có E_ij < 5.
+- **Bản kiểm tra W = 39 (18 pin, bỏ G2):** 4 °C 6/1, 24 °C 3/4, 43 °C 3/1. χ² = 3,054, p = 0,217; p hoán vị = 0,319.
+- **Kết luận:** pin ở 4 °C mất dung lượng sớm hơn, nhưng kết luận không vững khi đổi cửa sổ. Hoán vị được dùng vì E_ij < 5 và Fisher exact chỉ áp dụng trực tiếp cho bảng 2×2.
+
+**7. Tương quan với nhiệt độ cell (C2.7)**
+- `T_max_med` với fade: r = −0,019 (p = 0,937), Spearman ρ = −0,107 (p = 0,646).
+- Với fade25: r = −0,529 (p = 0,014), ρ = −0,379 (p = 0,090).
+- Riêng nhóm 4 °C (n = 7): r = −0,586 (p = 0,167) với fade và −0,518 (p = 0,234) với fade25.
+- Scatter (`inf_03`) cho thấy quan hệ hình chữ U: cell lạnh nhất (4 °C/1 A) và cell nóng nhất (43 °C) đều suy giảm nhanh. Vì vậy r tuyến tính không đo đúng quan hệ này. Giả thuyết "nhiệt độ cell quan trọng hơn nhiệt độ môi trường" chỉ được ủng hộ về hướng.
+
+**8. Đầu ra**
+- Bảng trong `reports/tables/`:
+  - `inference_summary.csv`: bảng tổng hợp, mỗi dòng một kiểm định; cột test, variable, H0, method, statistic, df, p, decision.
+  - `inference_ttests.csv`: chi tiết T1–T4 gồm F, Levene, T, df, t_crit, p, chênh lệch và CI.
+  - `inference_ci.csv`: CI theo nhóm.
+- Hình trong `reports/figures/`:
+  - `inf_01_ci_by_condition.png`: CI 95% theo nhóm, cho hai biến.
+  - `inf_02_anova_qq.png`: QQ-plot phần dư ANOVA.
+  - `inf_03_fade_vs_cell_temp.png`: scatter tốc độ suy giảm theo `T_max_med`.
+- Bảng kết luận và ý nghĩa thực tế (C2.8) ở mục 9 của notebook.
+
+**Việc còn lại:**
+- Leader review C2.8.
+- Báo nhóm sửa Go.md 3.5 (mốc 40 chu kỳ).
+- Viết Report §3.2 và §5.2.
