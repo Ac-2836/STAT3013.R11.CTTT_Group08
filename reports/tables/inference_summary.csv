@@ -1,0 +1,19 @@
+test,variable,H0,method,statistic,df,p,decision
+T1,fade_pct_per_100cyc,μ(43 °C) ≤ μ(24 °C),"pooled t-test, một phía",T = 5.603,4.0,0.002490808110789431,bác bỏ H0
+T2,fade_pct_per_100cyc,μ(24 °C) = μ(4 °C),"Welch t-test, hai phía",T = 2.440,4.04,0.07055839843340389,không bác bỏ H0
+T3,fade_pct_per_100cyc,μ(1 A) = μ(2 A),"Welch t-test, hai phía",T = 13.017,3.15,0.0007678745566900777,bác bỏ H0
+T4,fade_pct_per_100cyc,μ(xung vuông) = μ(CC),"pooled t-test, hai phía",T = 0.695,3.0,0.5368606693626401,không bác bỏ H0
+T2b (chỉ G1),fade_pct_per_100cyc,μ(chỉ G1) = μ(4 °C),"Welch t-test, hai phía",T = 6.886,3.14,0.005430315652932475,bác bỏ H0
+T1,fade25_pct_per_100cyc,μ(43 °C) ≤ μ(24 °C),"pooled t-test, một phía",T = 1.495,4.0,0.104594420731472,không bác bỏ H0
+T2,fade25_pct_per_100cyc,μ(24 °C) = μ(4 °C),"pooled t-test, hai phía",T = -1.485,6.0,0.18808617403651548,không bác bỏ H0
+T3,fade25_pct_per_100cyc,μ(1 A) = μ(2 A),"pooled t-test, hai phía",T = 3.773,5.0,0.01298651415676812,bác bỏ H0
+T4,fade25_pct_per_100cyc,μ(xung vuông) = μ(CC),"pooled t-test, hai phía",T = -1.833,3.0,0.16419378621565991,không bác bỏ H0
+T2b (chỉ G1),fade25_pct_per_100cyc,μ(chỉ G1) = μ(4 °C),"pooled t-test, hai phía",T = -1.135,5.0,0.30795573880513843,không bác bỏ H0
+ANOVA,fade_pct_per_100cyc,6 nhóm điều kiện có cùng trung bình,one-way ANOVA,F = 12.686,"(5,15)",6.0355934575020834e-05,bác bỏ H0
+Kruskal-Wallis,fade_pct_per_100cyc,6 nhóm điều kiện có cùng phân phối,phi tham số,H = 15.551,5,0.008249773406823513,bác bỏ H0
+ANOVA,fade25_pct_per_100cyc,6 nhóm điều kiện có cùng trung bình,one-way ANOVA,F = 12.668,"(5,15)",6.084817503034784e-05,bác bỏ H0
+Kruskal-Wallis,fade25_pct_per_100cyc,6 nhóm điều kiện có cùng phân phối,phi tham số,H = 13.122,5,0.022261231940598855,bác bỏ H0
+Chi-square (W = 25),"SOH < 0,9 trong 25 chu kỳ (21 pin)",nhóm nhiệt độ độc lập với kết quả,χ² + permutation (vì E_ij < 5),χ² = 13.093,2,0.001399930003499825,bác bỏ H0
+Chi-square (W = 39),"SOH < 0,9 trong 39 chu kỳ (18 pin)",nhóm nhiệt độ độc lập với kết quả,χ² + permutation (vì E_ij < 5),χ² = 3.054,2,0.31938403079846006,không bác bỏ H0
+Pearson,fade_pct_per_100cyc,"ρ(T_max_med, fade) = 0 (21 pin)",t-test của r,r = -0.019,19,0.9364548849136662,không bác bỏ H0
+Pearson,fade25_pct_per_100cyc,"ρ(T_max_med, fade) = 0 (21 pin)",t-test của r,r = -0.529,19,0.013618464054611914,bác bỏ H0
