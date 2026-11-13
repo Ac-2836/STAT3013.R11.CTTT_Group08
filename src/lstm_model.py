@@ -8,14 +8,27 @@ holds what is known just before that cycle's discharge, the same information set
     is_4C, I_level_A, cutoff_V                  fixed operating conditions
 The network learns dsoh = soh_t - soh_{t-1}; soh_prev + dsoh is the SOH forecast (docs/Rec.md 6.1 #8).
 
+Training (C6.8): LSTM(1 layer, 32 units) -> dropout 0.2 -> Linear(1), Adam, MSE on the scaled ΔSOH.
+GroupKFold by battery (k = 4) on the training batteries gives early stopping (patience 20), the learning
+curves and the validation score; the final model is refit on all training batteries for the median best
+epoch of the folds. Everything is repeated for 5 seeds (docs/Rec.md 6.1 #7).
+
 Run from the repository root to build the windows and run the self-checks:
     python src/lstm_model.py
 """
+import copy
+
 import numpy as np
 import pandas as pd
+import torch
+from sklearn.model_selection import GroupKFold
+from torch import nn
 
 from protocol import load_split
 
+HIDDEN, DROPOUT, LR, BATCH, MAX_EPOCHS, PATIENCE = 32, 0.2, 1e-3, 32, 300, 20
+SEEDS = [42, 43, 44, 45, 46]
+N_SPLITS = 4
 WINDOW = 10
 STEP_FEATURES = ["soh_prev", "T_max_prev_C", "chg_cc_time_s", "Re_ohm", "Rct_ohm", "log_rest_h",
                  "is_4C", "I_level_A", "cutoff_V"]
@@ -71,6 +84,111 @@ def check_windows(df, X, dsoh, soh_prev, idx):
     assert not np.isnan(X).any()
     assert np.allclose(X[:, -1, 0], soh_prev), "last step must carry soh_{t-1}, not soh_t"
     assert np.allclose(soh_prev + dsoh, df.soh.loc[idx]), "target must rebuild soh_t"
+
+
+class LSTMReg(nn.Module):
+    """docs/Go.md GĐ5d: the last hidden state of the window -> dropout -> one ΔSOH value."""
+
+    def __init__(self, n_feat, h=HIDDEN):
+        super().__init__()
+        self.lstm = nn.LSTM(n_feat, h, batch_first=True)
+        self.drop = nn.Dropout(DROPOUT)
+        self.out = nn.Linear(h, 1)
+
+    def forward(self, x):                  # x: (batch, WINDOW, n_feat)
+        _, (hT, _) = self.lstm(x)
+        return self.out(self.drop(hT[-1])).squeeze(-1)
+
+
+def fit_scale(X, y):
+    """Mean/SD of every step feature and SD of ΔSOH, from training windows only."""
+    flat = X.reshape(-1, X.shape[-1])
+    sd = flat.std(0)
+    return flat.mean(0), np.where(sd > 0, sd, 1), y.std()   # a fold may hold one condition only
+
+
+def scale_X(X, scale):
+    mu, sd, _ = scale
+    return ((X - mu) / sd).astype(np.float32)
+
+
+def mse(model, X, y):
+    model.eval()
+    with torch.no_grad():
+        return nn.functional.mse_loss(model(torch.from_numpy(X)), torch.from_numpy(y)).item()
+
+
+def train_one(X, y, seed, X_val=None, y_val=None, epochs=MAX_EPOCHS):
+    """Train on scaled windows and targets. With a validation set: stop after PATIENCE epochs without
+    improvement and restore the best weights. Returns (model, history of train/val MSE, best epoch)."""
+    torch.manual_seed(seed)
+    gen = torch.Generator().manual_seed(seed)
+    model = LSTMReg(X.shape[-1])
+    opt = torch.optim.Adam(model.parameters(), lr=LR)
+    Xt, yt = torch.from_numpy(X), torch.from_numpy(y.astype(np.float32))
+    y_val = None if y_val is None else y_val.astype(np.float32)
+    hist, best, best_state, best_epoch, wait = [], np.inf, None, epochs, 0
+    for epoch in range(1, epochs + 1):
+        model.train()
+        for b in torch.randperm(len(Xt), generator=gen).split(BATCH):
+            opt.zero_grad()
+            nn.functional.mse_loss(model(Xt[b]), yt[b]).backward()
+            opt.step()
+        va = np.nan if X_val is None else mse(model, X_val, y_val)
+        hist.append((epoch, mse(model, X, y.astype(np.float32)), va))
+        if X_val is None:
+            continue
+        if va < best:
+            best, best_state, best_epoch, wait = va, copy.deepcopy(model.state_dict()), epoch, 0
+        else:
+            wait += 1
+            if wait >= PATIENCE:
+                break
+    if best_state is not None:
+        model.load_state_dict(best_state)
+        assert np.isclose(mse(model, X_val, y_val), best), "best weights were not restored"
+    return model, pd.DataFrame(hist, columns=["epoch", "train_mse", "val_mse"]), best_epoch
+
+
+def predict_dsoh(model, X, scale):
+    model.eval()
+    with torch.no_grad():
+        return model(torch.from_numpy(scale_X(X, scale))).numpy().astype(float) * scale[2]
+
+
+def rmse(a, b):
+    return float(np.sqrt(np.mean((np.asarray(a) - np.asarray(b)) ** 2)))
+
+
+def cross_validate(train, seeds=SEEDS):
+    """GroupKFold by battery on the training batteries, for every seed.
+
+    Returns (folds, curves): folds has one row per seed and fold with the best epoch and the one-step
+    SOH RMSE of the LSTM and of naive on the validation batteries; curves holds every learning curve.
+    """
+    X, dsoh, soh_prev, idx = make_windows(train)
+    groups = train.battery_id.to_numpy()[idx]
+    folds, curves = [], []
+    for seed in seeds:
+        for k, (tr, va) in enumerate(GroupKFold(N_SPLITS).split(X, dsoh, groups)):
+            scale = fit_scale(X[tr], dsoh[tr])
+            model, hist, best_epoch = train_one(scale_X(X[tr], scale), dsoh[tr] / scale[2], seed,
+                                                scale_X(X[va], scale), dsoh[va] / scale[2])
+            soh_true = soh_prev[va] + dsoh[va]
+            folds.append({"seed": seed, "fold": k, "val_batteries": ", ".join(sorted(set(groups[va]))),
+                          "n_val": len(va), "best_epoch": best_epoch,
+                          "rmse_lstm": rmse(soh_prev[va] + predict_dsoh(model, X[va], scale), soh_true),
+                          "rmse_naive": rmse(soh_prev[va], soh_true)})
+            curves.append(hist.assign(seed=seed, fold=k))
+    return pd.DataFrame(folds), pd.concat(curves, ignore_index=True)
+
+
+def fit_final(train, seed, epochs):
+    """Refit on all training batteries for a fixed number of epochs; returns (model, scale)."""
+    X, dsoh, _, _ = make_windows(train)
+    scale = fit_scale(X, dsoh)
+    model, _, _ = train_one(scale_X(X, scale), dsoh / scale[2], seed, epochs=epochs)
+    return model, scale
 
 
 def main():
