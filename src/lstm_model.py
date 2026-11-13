@@ -24,8 +24,9 @@ import torch
 from sklearn.model_selection import GroupKFold
 from torch import nn
 
-from protocol import load_split
+from protocol import KEYS, PRED_COLS, load_split
 
+HELD = ["chg_cc_time_s", "Re_ohm", "Rct_ohm", "log_rest_h"]   # measured, unknown after the E2 origin
 HIDDEN, DROPOUT, LR, BATCH, MAX_EPOCHS, PATIENCE = 32, 0.2, 1e-3, 32, 300, 20
 SEEDS = [42, 43, 44, 45, 46]
 N_SPLITS = 4
@@ -191,8 +192,80 @@ def fit_final(train, seed, epochs):
     return model, scale
 
 
+def forecast_e1(model, scale, test):
+    """One step ahead for every is_eval row: the window holds true values up to t-1."""
+    X, _, soh_prev, idx = make_windows(test)
+    ev = test.is_eval.to_numpy()[idx]
+    return pd.Series(soh_prev[ev] + predict_dsoh(model, X[ev], scale), index=idx[ev])
+
+
+def forecast_e2(model, scale, battery):
+    """Recursive forecast of one test battery from its origin (first is_eval row), using only earlier rows.
+
+    soh_prev is fed back from the forecast; HELD features keep their last value before the origin and
+    T_max_prev_C keeps the last one known at the origin (docs/Rec.md 6.1 #5, as in the SVR).
+    """
+    o = int(np.argmax(battery.is_eval.to_numpy()))
+    F = step_features(battery).to_numpy(dtype=float, copy=True)
+    col = {c: i for i, c in enumerate(STEP_FEATURES)}
+    for c in HELD:
+        F[o:, col[c]] = F[o - 1, col[c]]
+    F[o + 1:, col["T_max_prev_C"]] = F[o, col["T_max_prev_C"]]
+    out = []
+    for i in range(o, len(F)):
+        w = F[i - WINDOW + 1:i + 1][None]
+        assert i - WINDOW + 1 >= 1 and not np.isnan(w).any()
+        soh = F[i, col["soh_prev"]] + predict_dsoh(model, w, scale)[0]
+        out.append(soh)
+        if i + 1 < len(F):
+            F[i + 1, col["soh_prev"]] = soh
+    return pd.Series(out, index=battery.index[o:])
+
+
+def check_e2_no_peeking(model, scale, battery):
+    """Scrambling every true value after the origin must not change the E2 forecast."""
+    after = battery.is_eval.to_numpy()
+    cols = ["soh", "T_max_C", "chg_cc_time_s", "Re_ohm", "Rct_ohm", "rest_before_h"]
+    scrambled = battery.copy()
+    scrambled.loc[after, cols] = scrambled.loc[after, cols].to_numpy()[::-1] * 0.9
+    assert np.allclose(forecast_e2(model, scale, battery), forecast_e2(model, scale, scrambled)), \
+        "E2 forecast uses values after the origin"
+
+
+def to_pred(test, preds, model):
+    """{scenario: Series indexed like test} -> rows in the shared prediction format."""
+    parts = []
+    for scenario, s in preds.items():
+        rows = test.loc[s.index]
+        parts.append(rows[KEYS].assign(model=model, scenario=scenario, y_true=rows.soh, y_pred=s.to_numpy(),
+                                       y_lower=np.nan, y_upper=np.nan)[PRED_COLS])
+    return pd.concat(parts, ignore_index=True)
+
+
+def run_test(train, test, final_epochs):
+    """Refit one model per seed ({seed: epochs}) and forecast E1 and E2 on the test batteries.
+
+    Returns (per_seed, lstm): per-seed predictions named lstm_seed<k>, and the seed-mean predictions
+    named lstm that go to reports/predictions/lstm.csv. The LSTM gives no prediction interval.
+    """
+    per_seed = []
+    for seed, epochs in final_epochs.items():
+        model, scale = fit_final(train, seed, epochs)
+        e1 = forecast_e1(model, scale, test)
+        e2 = pd.concat([forecast_e2(model, scale, b) for _, b in test.groupby("battery_id")])
+        per_seed.append(to_pred(test, {"E1": e1, "E2": e2}, f"lstm_seed{seed}"))
+    per_seed = pd.concat(per_seed, ignore_index=True)
+    lstm = (per_seed.groupby(["scenario"] + KEYS, as_index=False)
+            .agg(y_true=("y_true", "first"), y_pred=("y_pred", "mean"))
+            .assign(model="lstm", y_lower=np.nan, y_upper=np.nan)[PRED_COLS])
+    return per_seed, lstm
+
+
 def main():
     train, test = load_split()
+    model, scale = fit_final(train, SEEDS[0], 20)
+    for _, b in test.groupby("battery_id"):
+        check_e2_no_peeking(model, scale, b)
     for name, df in (("train", train), ("test", test)):
         X, dsoh, soh_prev, idx = make_windows(df)
         check_windows(df, X, dsoh, soh_prev, idx)
