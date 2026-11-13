@@ -35,6 +35,49 @@
 
 ## Tiến Hưng
 
+### [13/11/2026] Tiến Hưng · branch `tien-hung` · GĐ3 + GĐ5b Sửa theo review của Leader (WBS C2.8, C5.1–C5.7)
+
+**Căn cứ:** `docs/reviews/Member_Review_TienHung.md` mục 4.1, 4.2, 5.1. **Nguồn của mọi con số:** `notebooks/20_arima.ipynb`, `notebooks/02_inferential.ipynb` (Restart & Run All; Python 3.15, numpy 2.5.4, scipy 1.18.1, statsmodels 0.15.0, pandas 3.1.1).
+
+**1. ARIMA chạy lại ra số khác (mục 4.1): đã tìm ra nguyên nhân và sửa**
+- Trên cùng một máy, notebook cũ chạy lại cho kết quả giống hệt; lệch chỉ xuất hiện khi đổi phiên bản numpy/scipy. Để mô phỏng việc đổi máy, tôi nhân `soh` với (1 + 1e-12·nhiễu): với cách fit cũ, 4/12 mô hình trên pin test **đổi bậc** và dự báo E1 lệch tới 0,018. Nguyên nhân: trên thang SOH, phương sai nhiễu khoảng 1e-5 nên bài toán MLE bị lệch thang đo; L-BFGS (mặc định 50 vòng) dừng ở các điểm hơi khác nhau và cờ `converged` lật qua lại (ví dụ AIC cùng một cấu hình lệch tới 3,5 khi đổi điểm khởi đầu 0,1%).
+- Chỉ tăng `maxiter = 1000` (đề xuất trong review) **không đủ**: số cấu hình không ổn định gần như không đổi. Siết dung sai (`pgtol`, `factr`) hay thêm bước BFGS còn làm cờ hội tụ lật nhiều hơn.
+- **Cách sửa đã áp dụng:** fit MLE trên SOH tính theo điểm phần trăm (`100·soh`) với `maxiter = 1000`, rồi đổi tham số về đơn vị SOH (AR/MA giữ nguyên, drift và hệ số exog ÷ 100, σ² ÷ 100²) và chạy Kalman smoother trên chuỗi `soh` gốc. AIC, phần dư, sai số chuẩn và dự báo vì vậy vẫn ở đơn vị SOH; cờ `converged` lấy từ lần tối ưu. Đổi thang `y` chỉ cộng cùng một hằng số vào log-likelihood của mọi mô hình trên cùng tập dòng, nên **không đổi thứ hạng AIC** và không đổi quy tắc chọn bậc. Đã kiểm tra: dự báo của kết quả đổi thang khớp bản fit gốc tới 3e-16.
+- Kiểm tra sau khi sửa: nhiễu 1e-12 và 1e-9 (10 lần rút ngẫu nhiên) **không làm đổi bậc nào**; dự báo lệch tối đa khoảng 2e-4 (trước là 0,018). Chạy notebook hai lần liên tiếp: `arima.csv` và `arima_orders.csv` giống hệt từng byte.
+- Lưu ý kỹ thuật: statsmodels sửa trực tiếp dict `method_kwargs` khi fit, nên phải truyền dict mới mỗi lần gọi.
+- **Mới:** `reports/tables/arima_orders.csv` (20 dòng: 8 mô hình train + 4 pin test × 3 biến thể; cột set, battery_id, model, n_fit, p, d, q, trend, AIC, converged, LB_p_lag10, LB_p_lag20, LB_pass, aic_rank). Cả 20 mô hình cuối đều hội tụ.
+
+**2. Số liệu ARIMA đã đổi (thay cho các số trong mục [11/11/2026] GĐ5b bên dưới)**
+- Bậc trên train: B0005 giờ là (0,1,2)t (trước bị loại vì "không hội tụ", đúng như review nghi ngờ), B0045 (2,1,2)t, B0046 (0,1,2)t, B0048 (0,1,0)t, B0006/B0018/B0033/B0056 (1,1,1)t. Ljung-Box: 7/8 train (B0018 vẫn không đạt: p = 0,061 ở lag 10, 0,0003 ở lag 20), 12/12 mô hình test.
+- Bậc trên test: B0007 (1,1,1)t cả ba biến thể; B0034 (2,1,2)t, (2,1,2)t, arimax (2,1,2)n; B0047 (0,1,0)t cả ba; B0055 arima (0,1,1)n, arimax_rest (1,1,0)n, arimax (1,1,0)t.
+- Hệ số `log_rest` trong `arimax_rest` vẫn dương ở cả 4 pin: B0007 0,0014 (p = 0,019), B0034 0,0119, B0047 0,0038, B0055 0,0097 (ba pin sau p < 0,0001).
+
+| Mô hình | RMSE E1 | MAE E1 | R² E1 | RMSE E2 | MAE E2 | R² E2 |
+|---|---|---|---|---|---|---|
+| naive | 0,0226 | 0,0119 | 0,500 | 0,0343 | 0,0249 | −0,155 |
+| arima | 0,0203 | 0,0114 | 0,598 | 0,0594 | 0,0468 | −2,456 |
+| arimax_rest | 0,0172 | 0,0108 | 0,709 | 0,0579 | 0,0456 | −2,287 |
+| arimax | 0,0171 | 0,0098 | 0,715 | 0,0583 | 0,0407 | −2,326 |
+
+- Độ phủ khoảng 95%: E1 88,7–92,0%; **E2 chỉ 68,1–70,9% ở cả ba biến thể** (trước ghi arimax 93,4%, số đó không còn đúng).
+- RUL (E2): arima −12 / −49 / không chạm 0,8 (B0007 / B0034 / B0055); arimax −11 / không chạm / +6.
+- Kết luận RQ3 không đổi: E1 thắng naive, E2 kém naive do drift tuyến tính quyết định kết quả.
+
+**3. Dịch sang tiếng Anh (mục 4.2)**
+- Toàn bộ markdown, comment, chuỗi in ra của hai notebook; nội dung các bảng `inference_*.csv` (`decision`, `method`, `H0`, `comparison`, tên nhóm); tiêu đề, nhãn trục, chú giải của các hình `inf_0*.png`, `arima_0*.png`. Dấu thập phân là dấu chấm.
+- Đã so `inference_*.csv` trước và sau khi dịch: mọi giá trị số giữ nguyên (lệch 0).
+
+**4. Suy diễn: bổ sung theo mục 5.1**
+- Cột `p_holm`, `decision_holm` trong `inference_summary.csv` (Holm trên cả 18 kiểm định). 10/18 bác bỏ H0 khi chưa hiệu chỉnh, còn 5/18 sau Holm (T1 fade, T3 fade, hai ANOVA, chi-square W = 25). **T3 với fade25 không còn ý nghĩa sau Holm** (p_holm = 0,143); Kruskal-Wallis cũng không (0,099 và 0,200). Quyết định chính vẫn dùng p chưa hiệu chỉnh vì mỗi kiểm định trả lời một câu hỏi riêng đã nêu trước; đã ghi rõ trong notebook.
+- Cột `p_Welch`, `reject_H0_Welch` trong `inference_ttests.csv`: kiểm tra độ nhạy cho trường hợp n = 2 (F-test/Levene gần như không có lực). Welch cho cùng quyết định ở cả 10 dòng.
+- Kết luận notebook đã thêm: "kết luận về nhiệt độ phụ thuộc cách đo tốc độ suy giảm; kết luận về dòng xả ở 4 °C thì vững"; T2 đổi chiều giữa fade và fade25; cảnh báo không diễn giải r âm thành "cell nóng hơn suy giảm chậm hơn"; chênh lệch mẫu 21 pin (notebook này) và 23 pin (hồi quy của Quốc Đạt).
+- Chi-square: ghi rõ việc đổi W là **đề xuất chờ Leader chốt** và report phải trình bày cả W = 25 và W = 39.
+
+**Việc còn lại:**
+- Nhắn Leader chốt W của chi-square (ghi vào Rec.md, sửa Go.md 3.5).
+- Thống nhất với Quốc Đạt mẫu chính (21 hay 23 pin) cho report.
+- C5.8: viết Report §3.4, §5.4 theo số mới ở mục 2.
+
 ### [11/11/2026] Tiến Hưng · branch `tien-hung` · GĐ5b ARIMA / ARIMAX (WBS C5.1–C5.7)
 
 **Nguồn của mọi con số:** `notebooks/20_arima.ipynb` (chạy Restart & Run All, statsmodels 0.15.0, pandas 3.1.1, numpy 2.5.4, Python 3.15). Dữ liệu và chấm điểm lấy từ `src/protocol.py` (`load_split()`, `evaluate()`), không sửa protocol.
