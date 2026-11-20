@@ -75,8 +75,12 @@ def fig2_capacity_definition(c):
 
 
 def fig3_rest_recovery(c):
-    """Capacity change from the previous valid discharge of the same cell and condition, by rest length."""
-    d = c[~c.cap_outlier].sort_values(["battery_id", "segment", "cycle_valid"]).copy()
+    """Capacity change from the previous valid discharge of the same cell and condition, by rest length.
+
+    Sample = tier A/B cells without cap_outlier rows, the definition of the F5 table in
+    docs/Introduction_of_dataset.md.
+    """
+    d = c[c.tier.isin(["A", "B"]) & ~c.cap_outlier].sort_values(["battery_id", "segment", "cycle_valid"]).copy()
     d["delta"] = d.groupby(["battery_id", "segment"]).capacity_int_Ah.diff()
     d = d.dropna(subset=["delta"])
     bins, labels = [0, 0.1, 1, 24, np.inf], ["< 6 min", "6 min - 1 h", "1 - 24 h", "> 1 day"]
@@ -88,7 +92,8 @@ def fig3_rest_recovery(c):
     ax.set_xticks(range(1, 5), [f"{lab}\n(n = {len(x)})" for lab, x in zip(labels, groups)])
     ax.axhline(0, color=MUTED, lw=0.9)
     ax.set(xlabel="Rest before discharge", ylabel="Δ capacity vs previous cycle (Ah)")
-    ax.set_title("Capacity temporarily recovers after long rests", loc="left", fontsize=11)
+    ax.set_title("Capacity temporarily recovers after long rests (tier A/B cells, outliers removed)",
+                 loc="left", fontsize=11)
     save(fig, "fig3_rest_recovery.png")
     return {lab: x.median() for lab, x in zip(labels, groups)}
 
