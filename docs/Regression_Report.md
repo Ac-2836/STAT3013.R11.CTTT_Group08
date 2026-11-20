@@ -115,8 +115,8 @@ not evidence that ageing improves a battery. Temperature, current and depth of d
 Backward selection follows four explicit steps: fit the full model; test eligible terms; remove the highest p > 0.05;
 refit and repeat until no eligible term exceeds 0.05. Interactions are tested separately, and retained interactions protect
 their component main effects. Every step exports formula, p-values, adjusted R², AIC/BIC and the removed term.
-OLS selection is retained as a sensitivity. The exact course slide p.39 is not present locally, so literal slide alignment
-requires reviewer confirmation. Selection p-values and post-selection intervals are descriptive rather than confirmatory.
+OLS selection is retained as a sensitivity. This is the selection procedure planned in `docs/Go.md` step 5a.6 (Chap 3, pp. 39 and 41).
+Selection p-values and post-selection intervals are descriptive rather than confirmatory.
 
 | step | formula | covariance | adjusted_R2 | AIC | BIC | eligible_p_values | removed | removed_p |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -317,6 +317,6 @@ RUN_SLOW=1 python -m unittest discover -s tests      # adds the end-to-end rerun
 `sem_bootstrap_audit.csv` logs every bootstrap attempt; the number of failed attempts before 200 valid replicates
 can differ slightly between machines, so its attempt counts are not used as results.
 
-Review remains necessary for the scenario-specific anchoring strategy before group comparison, alignment with course slide p.39,
+Review remains necessary for the scenario-specific anchoring strategy before group comparison,
 the theoretical SEM paths, incomplete condition crossing, retrospective cleaning, absence of calibrated prediction intervals,
 E2 performance below persistence, and the limited information from 22 battery blocks. No causal mediation or good primary SEM fit is claimed.
