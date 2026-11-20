@@ -16,12 +16,12 @@ import protocol as P
 matplotlib.use("Agg")
 TABLES = P.ROOT / "reports" / "tables"
 FIGURES = P.ROOT / "reports" / "figures"
-MODELS = ["naive", "regression", "arima", "arimax", "svr", "lstm"]
+MODELS = ["naive", "regression", "arima", "arimax", "svr", "lstm", "hybrid"]
 # Validated categorical order (dataviz reference palette); naive is the gray baseline.
 COLORS = {"naive": "#8a8984", "regression": "#2a78d6", "arima": "#eb6834", "arimax": "#1baf7a",
-          "svr": "#eda100", "lstm": "#e87ba4"}
+          "svr": "#eda100", "lstm": "#e87ba4", "hybrid": "#008300"}
 STYLES = {"naive": (0, (4, 3)), "regression": "-", "arima": "-", "arimax": (0, (6, 2)),
-          "svr": (0, (2, 1.5)), "lstm": "-"}
+          "svr": (0, (2, 1.5)), "lstm": "-", "hybrid": "-"}
 HORIZON = 20
 
 
@@ -95,7 +95,7 @@ def plot_e2(pred, test, rul):
             ax.spines[s].set_visible(False)
         ax.grid(axis="y", color="#e6e5e0", lw=0.6)
     handles, labels = axes.flat[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="lower center", ncol=7, frameon=False, fontsize=9)
+    fig.legend(handles, labels, loc="lower center", ncol=8, frameon=False, fontsize=9)
     fig.suptitle("E2: multi-step forecasts from the 60% origin (dotted line) on the four test cells", fontsize=11)
     fig.tight_layout(rect=(0, 0.05, 1, 0.96))
     fig.savefig(FIGURES / "compare_e2_forecasts.png", dpi=200)
