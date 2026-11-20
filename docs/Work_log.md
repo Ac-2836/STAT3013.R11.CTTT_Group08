@@ -932,3 +932,24 @@ Bảng so khớp:
 - `assert` cờ sklearn = s > 0,5.
 - Đầu ra bản tiếng Việt (05/11) và bản tiếng Anh (14/11) trùng khớp ở mọi bảng (232 cờ, 23 trùng, 98 / 55 / 56, seed 215–258, Jaccard 0,77–0,84, cùng tỉ lệ 28 / 12 / 16).
 - Notebook Restart & Run All: 28 ô, không ô nào lỗi. `python src/iforest_check.py` chạy với console cp1252, mã thoát 0.
+
+---
+
+## Khải Hưng
+
+### [21/11/2026] Khải Hưng · branch `khai-hung` · So sánh mô hình, cảnh báo EOL, vẽ lại hình 1–6, rà soát tính nhất quán
+
+**So sánh mô hình (`src/compare_models.py`, `notebooks/60_compare.ipynb`, PR #5).**
+- Đọc 6 file trong `reports/predictions/` (naive, regression, arima, arimax, svr, lstm), chấm bằng `protocol.evaluate()`. Kết quả gộp trên 213 dòng: E1 MAE thấp nhất là LSTM và ARIMAX (0,0098), naive 0,0119; E2 không mô hình nào thắng naive (0,0249), gần nhất là LSTM (0,0303).
+- Cảnh báo "SOH < 0,8 trong 20 chu kỳ tới": suy từ quỹ đạo E2. Dòng quyết định là mọi chu kỳ đánh giá của B0007, B0034, B0055 trước lần chạm thật; bỏ các dòng mà cửa sổ vượt quá chu kỳ cuối mà chưa thấy chạm (không biết nhãn). Cùng 96 dòng cho mọi mô hình. Naive: sensitivity 0; ARIMA/SVR/LSTM: sensitivity 0,89, specificity 0,00–0,22; regression/ARIMAX: sensitivity 0,44–0,56, specificity 0,92. Thử thêm cửa sổ 10 và 30 chu kỳ: cùng xu hướng.
+- Hạn chế đã ghi trong notebook: 96 dòng chỉ từ 3 pin và phụ thuộc nhau; cảnh báo dùng quỹ đạo cố định từ mốc 60%; ARIMA/ARIMAX fit trên 60% đầu của chính pin test, các mô hình khác học từ 8 pin train.
+
+**Hình 1–6 (`src/make_report_figures.py`).** Các hình cũ (23/10) có trước khi làm lại pipeline và không có code trong repo. Đã viết script vẽ lại từ `data/processed/`. Kết luận không đổi; dung lượng theo điều kiện của B0038/B0042 lệch tối đa 0,01 Ah so với bản cũ. Hình 1 bỏ dòng outlier, break-in và pin tier N. Hình 3 dùng tier A/B, bỏ `cap_outlier`, ΔC trong cùng segment, cho đúng bảng F5: n = 1.159 / 696 / 61 / 57, trung vị −0,0073 / −0,0052 / +0,0081 / +0,0294 Ah.
+
+**Rà soát tính nhất quán toàn repo.** Chạy lại pipeline từ 34 file `.mat` trong một bản sao sạch: 8 file CSV giống từng byte. Mọi con số đối chiếu ở Rec.md mục 2.1, 2.2, 6.1 đều đúng. Đã sửa trong tài liệu của Leader:
+- ADF (Introduction_of_dataset.md F9, Go.md 5b.3): bản cũ ghi p = 0,53–0,89 cho mọi pin; theo `20_arima` thì B0045 và B0055 dừng (p < 0,002), 10 pin còn lại p = 0,11–0,97.
+- Bảng F5 đã tái lập được (xem trên), bỏ cảnh báo "chưa tái tạo được".
+- F3 (B0041 chỉ hồi lại 1,02 Ah), F7 (r = 0,86 là khi bỏ outlier; 0,84 trên mọi dòng; thêm lưu ý từ kết quả RQ4 của SVR), F10 (đợt sụt của B0033 là chu kỳ 140–147).
+- ARIMA dự báo `soh`, không phải dung lượng; tier B không dùng làm pin test; `eda_dataset.py` chỉ tạo `battery_fade.csv`.
+- Go.md: bảng "khoảng dự báo" của các mô hình; hai khuyến nghị ở mục 8 (nhiệt độ cao, ước lượng SOH khi sạc) viết lại theo kết quả kiểm định T1 và RQ4; trạng thái các giai đoạn đã xong.
+- README: cây thư mục, bảng file, các bước tái lập.

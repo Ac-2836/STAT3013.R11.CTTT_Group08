@@ -75,8 +75,8 @@ Mỗi chương của môn học được chuyển thành các gói công việc 
 | Mã | Công việc | R | Hỗ trợ | Bắt đầu | Kết thúc | Output | Xong khi |
 |---|---|---|---|---|---|---|---|
 | C1.1 | Phân loại dữ liệu: cấu trúc, panel data, thang đo của từng biến | Minh Vũ | Cả nhóm | 26/10 | 27/10 | Bảng trong Report §3 | Mỗi biến trong từ điển dữ liệu có thang đo kèm lý do |
-| C1.2 | Parse `.mat` thành bảng, gộp và ghép dữ liệu ⏳ (làm lại từ đầu) | Khải Hưng | – | 23/10 | 25/10 | `src/build_dataset.py`, `cycles.csv` | Chạy được, kết quả ghi vào Work_log |
-| C1.3 | Làm sạch dữ liệu, chia segment, tính SOH, phân tầng pin ⏳ (làm lại từ đầu, theo quyết định ở Rec.md mục 2) | Khải Hưng | – | 23/10 | 25/10 | `src/clean_dataset.py`, `cycles_clean.csv` | Chạy được, đúng các tham số đã chốt, chờ review |
+| C1.2 | Parse `.mat` thành bảng, gộp và ghép dữ liệu ✅ | Khải Hưng | – | 23/10 | 25/10 | `src/build_dataset.py`, `cycles.csv` | Chạy được, kết quả ghi vào Work_log |
+| C1.3 | Làm sạch dữ liệu, chia segment, tính SOH, phân tầng pin ✅ (theo quyết định ở Rec.md mục 2) | Khải Hưng | – | 23/10 | 25/10 | `src/clean_dataset.py`, `cycles_clean.csv` | Chạy được, đúng các tham số đã chốt, chờ review |
 | C1.4 | Review quy tắc làm sạch (mỗi người một phần, Go.md bước 1.6) | Cả nhóm | – | 26/10 | 27/10 | Biên bản review trong issue GitHub | Cả 4 người đồng ý |
 | C1.5 | Bảng thống kê mô tả ở mức chu kỳ và mức pin, tách theo điều kiện | Minh Vũ | Tiến Hưng | 27/10 | 29/10 | `notebooks/01_descriptive.ipynb` | Có đủ n, mean, median, SD, SE, skewness, kurtosis (đã +3) |
 | C1.6 | Histogram, boxplot, đường SOH, scatter trở kháng | Minh Vũ | Khải Hưng | 27/10 | 29/10 | `reports/figures/` | Mỗi hình có 2–3 câu diễn giải |
