@@ -217,3 +217,5 @@ Giao thức ở bảng trên đã được cài trong `src/protocol.py` (`load_s
 | 10 | Tên trong file dự báo | `hybrid` (`reports/predictions/hybrid.csv`). Code `src/hybrid_model.py`, notebook `notebooks/70_hybrid.ipynb`. Người làm: Khải Hưng |
 
 **Kết quả CV trên 8 pin train (mốc 60% giả, 383 dòng E2):** MAE E2 0,0237 so với naive 0,0365; cảnh báo H = 20: sensitivity 1,00, specificity 0,71 (naive 0 và 1,00); E1 MAE 0,0081 so với naive 0,0087. Đây là số lạc quan vì w được chọn trên chính các pin này; bằng chứng thật là lần chạy duy nhất trên pin test.
+
+**Bổ sung ngày 21/11/2026, SAU khi chạy test:** vì 4 pin test cho ít bằng chứng thống kê (Diebold–Mariano so với naive ở E2: p = 0,59), thêm một kiểm tra độ vững: giữ nguyên thiết kế (không chỉnh gì), leave-one-cell-out trên cả 12 pin tier A, prior từ 11 pin còn lại (`hybrid_loco12_*.csv`). Đây chỉ là bằng chứng hỗ trợ, vì w được chọn trên 8 trong 12 pin đó; kết quả chính vẫn là lần chạy test.

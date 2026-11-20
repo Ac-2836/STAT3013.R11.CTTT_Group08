@@ -971,3 +971,5 @@ Bảng so khớp:
 - Chi phí chính sách "thay ở cảnh báo đầu tiên" (3 pin; R = chi phí hỏng quy ra chu kỳ): hybrid = 63 + R, rẻ hơn naive (3R) khi R > 31,5; trên 3 pin này ARIMAX rẻ nhất ở mọi R (29 + R), nhờ riêng B0055.
 
 **Cập nhật kèm theo:** `compare_models.py` và `60_compare` thêm mô hình thứ 7 trong bảng so sánh; README, Go.md (RQ7, bảng so sánh), Introduction_of_dataset.md.
+
+**Kiểm tra độ vững trên 12 pin (thêm sau khi chạy test, ghi ở Rec.md mục 8).** Giữ nguyên thiết kế, leave-one-cell-out trên 12 pin tier A, prior từ 11 pin còn lại. E2: MAE 0,0184 so với naive 0,0323 (thấp hơn 43%), Diebold–Mariano p < 0,001, hybrid tốt hơn ở 8/12 pin (thua ở B0034, B0047, B0048, B0055, các pin đi ngang sau mốc). E1: 0,0094 so với 0,0098, p < 0,001, tốt hơn ở 10/12 pin. Cảnh báo H = 20: sensitivity 0,82, specificity 0,81 (naive 0 và 1). Chỉ là bằng chứng hỗ trợ vì w được chọn trên 8 trong 12 pin.
