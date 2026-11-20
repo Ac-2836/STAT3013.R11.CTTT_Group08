@@ -231,7 +231,20 @@ def cv_summary(cv_train_df, cv_pred):
     C.MODELS = ["naive", "hybrid"]
     alarm = C.confusion(C.alarm_rows(both, cv_train_df, H))
     C.MODELS = old
-    return pd.DataFrame(rows), alarm
+    return pd.DataFrame(rows), alarm, both
+
+
+def loco_all12(train, test):
+    """Robustness check added after the test run: the frozen design (no re-tuning), leave-one-cell-out over all
+    12 tier-A cells, prior from the other 11. Supporting evidence only: W was chosen on 8 of these cells."""
+    cells = pd.concat([train, test.drop(columns="is_eval")], ignore_index=True).sort_values(P.KEYS)
+    cv_df, cv_pred, _ = cv_train(cells)
+    metrics, alarm, both = cv_summary(cv_df, cv_pred)
+    per_cell = both.assign(ae=(both.y_pred - both.y_true).abs()).pivot_table(
+        index=["scenario", "battery_id"], columns="model", values="ae").reset_index()
+    per_cell["hybrid_better"] = per_cell.hybrid < per_cell.naive
+    dm = dm_table(both, against=("naive",))
+    return metrics, alarm, per_cell, dm
 
 
 def plot_test(pred, p_eol, test, path):
@@ -281,7 +294,7 @@ def run():
     self_check(train, test)
     cv_df, cv_pred, _ = cv_train(train)
     q = e1_quantile(cv_pred)
-    cv_metrics, cv_alarm = cv_summary(cv_df, cv_pred)
+    cv_metrics, cv_alarm, _ = cv_summary(cv_df, cv_pred)
     pred, p_eol, fits = predict_test(train, test, q)
     P.check_pred(pred, test)
     pred.to_csv(P.PRED / "hybrid.csv", index=False)
@@ -298,7 +311,13 @@ def run():
                        noise_sd=np.sqrt(f["s2"]), anchor_level=f["level"]) for b, f in fits.items()]
                  ).to_csv(tables / "hybrid_parameters.csv", index=False)
     plot_test(pred, p_eol, test, P.ROOT / "reports" / "figures" / "hybrid_test.png")
-    return dict(q_e1=q, cv_metrics=cv_metrics, cv_alarm=cv_alarm, pred=pred, p_eol=p_eol, dm=dm, cost=cost, fits=fits)
+    l_metrics, l_alarm, l_cells, l_dm = loco_all12(train, test)
+    l_metrics.to_csv(tables / "hybrid_loco12_metrics.csv", index=False)
+    l_alarm.to_csv(tables / "hybrid_loco12_alarm.csv", index=False)
+    l_cells.to_csv(tables / "hybrid_loco12_by_cell.csv", index=False)
+    l_dm.to_csv(tables / "hybrid_loco12_dm.csv", index=False)
+    return dict(q_e1=q, cv_metrics=cv_metrics, cv_alarm=cv_alarm, pred=pred, p_eol=p_eol, dm=dm, cost=cost, fits=fits,
+                loco_metrics=l_metrics, loco_alarm=l_alarm, loco_cells=l_cells, loco_dm=l_dm)
 
 
 if __name__ == "__main__":
