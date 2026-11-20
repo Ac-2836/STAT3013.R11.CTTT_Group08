@@ -1,6 +1,6 @@
 # Regression methods and results — Quoc Dat
 
-Generated from executed outputs on 2026-11-10 (audit started 2026-11-09). English text is intended for integration into Full Report §§3.3/4/5.3 and the IEEE paper. The team documents and other members' models are not overwritten.
+Generated from executed outputs on 2026-11-10. English text is intended for integration into Full Report §§3.3/4/5.3 and the IEEE paper. The team documents and other members' models are not overwritten.
 
 ## Research purpose and mathematical model
 
@@ -269,7 +269,7 @@ No post-test candidate expansion or tuning was performed. No SVR, ARIMA or LSTM 
 | regression | B0055 | 59 | 101 | 65 | 91 | both_cross_within_horizon | 6 | 32 | 26 | 26 |
 
 The first observed `SOH ≤ 0.8` is absorbing for event timing even if SOH later recovers.
-B0047 already crossed before the origin; its historical 27-cycle EOL error is invalid for this forecast task and is now blank.
+B0047 already crossed before the origin; its earlier 27-cycle EOL error is invalid for this forecast task and is now blank.
 No-crossing rows remain explicit, and RUL error is computed only for two within-horizon crossings.
 No horizon extrapolation, interpolation of crossing cycles or silent removal of censored cells is performed.
 
@@ -277,11 +277,7 @@ No horizon extrapolation, interpolation of crossing cycles or silent removal of 
 
 `reports/predictions/regression.csv` retains exactly `model,battery_id,cycle_valid,scenario,y_true,y_pred,y_lower,y_upper`.
 It contains the CV-selected regression strategy, with `model=regression`; intervals are blank because no valid forecast interval is available.
-Historical archives are optional. A valid old prediction CSV is scored separately in `regression_historical_metrics.csv`;
-missing or invalid archives produce an explicit skip status and an empty historical table, never substitute predictions.
-Current fit, CV, metrics, EOL results and the main prediction CSV are independent of archive availability.
 Research/variant/baseline forecasts are kept in `reports/tables/`, not as extra files in the group's predictions glob.
-Archived working-copy and Git HEAD artifacts remain in `reports/audit/regression_sem_before/`.
 See [test forecast figure](../reports/figures/regression_test_forecasts.png),
 [simple diagnostics](../reports/figures/regression_simple_diagnostics.png), and
 [multiple-regression diagnostics](../reports/figures/regression_preferred_diagnostics.png).
@@ -309,29 +305,17 @@ The numerical tables above should accompany this paragraph; do not present the a
 
 These sources document the methods. They do not establish battery-specific causal mechanisms; the team's battery literature review still needs substantive primary studies.
 
-## Final stabilization validation (2026-11-10)
+## Reproduction
 
-All **28 automated tests passed** (0 failures/errors); six Python files and all notebook code cells compiled.
-Both complete notebooks ran with fresh kernels from the repository root and from `notebooks/`
-(13 regression and 4 SEM code cells, zero error outputs); numerical CSV/JSON artifacts matched exactly between working directories.
-An isolated repository copy without either historical archive also executed both complete notebooks and generated all three reports.
-All **57 current-result CSVs**, including the main prediction CSV, matched the archive-present run byte for byte.
-Historical-only tables were explicitly empty with skip messages. The report generator also succeeded without historical inputs.
+```bash
+python src/run_regression_sem.py                     # executes notebooks/10_regression.ipynb and 50_sem.ipynb
+python -m unittest discover -s tests                 # fast suite, about 15 s
+RUN_SLOW=1 python -m unittest discover -s tests      # adds the end-to-end reruns, 10+ min
+```
 
-The existing isolated `.venv` passed all 98 installed dependency constraints checked using `importlib.metadata` and `packaging`;
-it has no `pip` module, so `pip check` was unavailable. No dependency or system environment was changed.
-SHA256 checks confirmed 35 protected files unchanged, including original/processed data, shared pipeline, `Rec.md`,
-the preexisting test notebook and real historical archives. `git diff --check` passed.
-Detailed evidence: [final validation record](../reports/audit/regression_sem_final_validation.json) and [test log](../reports/audit/regression_sem_final_tests.log).
-
-Compared with the preserved pre-pass files, the maximum prediction change was 6.85e-14 SOH and the maximum
-bootstrap effect-CI endpoint change was 6.13e-7. A control run using the unchanged pre-pass source reproduced the new
-prediction and SEM CSVs exactly: these differences arise on numerical reexecution, not from model/specification changes.
-The unscaled legacy SEM sensitivity changed substantially (objective about 0.590259 in the preserved table versus
-6.242571 now), also exactly reproduced by unchanged-source control. Its scale-sensitive optimizer success flag does not
-establish an adequate solution; the internally scaled primary SEM remains the reported analysis.
-Current regression metric/EOL tables omit historical rows; historical prediction metrics are now separate.
-The preserved `sem_historical_raw_units_coefficients.csv` is a legacy artifact, not an output consumed by the current pipeline.
+`requirements-regression-sem.lock.txt` lists the package versions the results were produced with.
+`sem_bootstrap_audit.csv` logs every bootstrap attempt; the number of failed attempts before 200 valid replicates
+can differ slightly between machines, so its attempt counts are not used as results.
 
 Review remains necessary for the scenario-specific anchoring strategy before group comparison, alignment with course slide p.39,
 the theoretical SEM paths, incomplete condition crossing, retrospective cleaning, absence of calibrated prediction intervals,

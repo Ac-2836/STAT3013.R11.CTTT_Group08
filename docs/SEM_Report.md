@@ -1,6 +1,6 @@
 # SEM / path analysis methods and results — Quoc Dat
 
-Generated from executed outputs on 2026-11-10 (audit started 2026-11-09). Integration targets: Full Report §§3.7/4/5.7 and IEEE Methodology/Results.
+Generated from executed outputs on 2026-11-10. Integration targets: Full Report §§3.7/4/5.7 and IEEE Methodology/Results.
 
 ## Theoretical framework and hypotheses
 
@@ -58,16 +58,7 @@ positive fitted covariance and variance, and numerical Fisher-information rank. 
 25 of 25 parameters; there are 28 distinct observed covariance moments.
 Local numerical identification does not imply that the theory is correct or causally identified.
 
-The following historical comparison is optional and was read from the available archived notebook.
-Missing or invalid archives are explicitly skipped; no old fit indices are reconstructed. Primary estimation,
-all six specifications/sensitivities, 200-valid battery-block bootstrap, coefficient/effect tables and diagram run independently.
-`sem_historical_status.json` records availability, and `sem_historical_reported.csv` is empty when the comparison is skipped.
-
-The available archived original notebook reports:
-
-| DoF | chi2 | CFI | TLI | RMSEA |
-| --- | --- | --- | --- | --- |
-| 13 | 479.29 | 0.923489 | 0.852863 | 0.210303 |
+The original specification (row `original_scaled_implicit_exog` below) reports DoF 13, chi2 479.29 and RMSEA 0.210.
 
 `semopy 2.3.11` calculates df as `p(p+1)/2 − number_of_active_parameters`.
 Its default empirical exogenous moments are fixed without being counted in that parameter total. With four exogenous variables,
@@ -79,16 +70,13 @@ confirmed by numerical parameter/information counts, rather than an assumption t
 
 | model | n | batteries | converged | free_parameters | information_rank | DoF | chi2 | CFI | TLI | RMSEA |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| legacy_raw_units_reexecution | 812 | 22 | True | 15 | 15 | 13 | 5068.97 | 0.490055 | 0.0193372 | 0.6925 |
 | original_scaled_implicit_exog | 812 | 22 | True | 15 | 15 | 13 | 479.29 | 0.854747 | 0.720667 | 0.210303 |
 | primary_explicit_exog | 812 | 22 | True | 25 | 25 | 3 | 479.29 | 0.851816 | -0.037285 | 0.44245 |
 | age_control_sensitivity | 812 | 22 | True | 27 | 27 | 1 | 341.741 | 0.893988 | -1.22624 | 0.648189 |
 | age_correlated_residuals_SATURATED | 812 | 22 | True | 28 | 28 | 0 | 3.90642e-08 | — | — | — |
 | exclude_quality_flags_sensitivity | 798 | 22 | True | 25 | 25 | 3 | 460.583 | 0.867736 | 0.0741516 | 0.437467 |
 
-The raw-unit legacy reexecution can terminate at a much poorer objective despite an optimizer success flag.
-Its values are a numerical sensitivity, not a replacement for the archived historical result. The scaled original model and corrected model
-recover the historical primary discrepancy closely; unit-scaling tests verify conversion of coefficients.
+Unit-scaling tests verify the conversion of coefficients back to original units.
 The corrected primary fit is poor. Negative TLI is retained rather than clipped. Removing flagged rows does not repair fit.
 Package-reported AIC/BIC/LogLik are exported for provenance and are not used for selection or interpreted as validated likelihood comparisons.
 
@@ -202,29 +190,17 @@ The results do not establish causal mediation. An age/correlated-residual sensit
 
 These sources document the methods. They do not establish battery-specific causal mechanisms; the team's battery literature review still needs substantive primary studies.
 
-## Final stabilization validation (2026-11-10)
+## Reproduction
 
-All **28 automated tests passed** (0 failures/errors); six Python files and all notebook code cells compiled.
-Both complete notebooks ran with fresh kernels from the repository root and from `notebooks/`
-(13 regression and 4 SEM code cells, zero error outputs); numerical CSV/JSON artifacts matched exactly between working directories.
-An isolated repository copy without either historical archive also executed both complete notebooks and generated all three reports.
-All **57 current-result CSVs**, including the main prediction CSV, matched the archive-present run byte for byte.
-Historical-only tables were explicitly empty with skip messages. The report generator also succeeded without historical inputs.
+```bash
+python src/run_regression_sem.py                     # executes notebooks/10_regression.ipynb and 50_sem.ipynb
+python -m unittest discover -s tests                 # fast suite, about 15 s
+RUN_SLOW=1 python -m unittest discover -s tests      # adds the end-to-end reruns, 10+ min
+```
 
-The existing isolated `.venv` passed all 98 installed dependency constraints checked using `importlib.metadata` and `packaging`;
-it has no `pip` module, so `pip check` was unavailable. No dependency or system environment was changed.
-SHA256 checks confirmed 35 protected files unchanged, including original/processed data, shared pipeline, `Rec.md`,
-the preexisting test notebook and real historical archives. `git diff --check` passed.
-Detailed evidence: [final validation record](../reports/audit/regression_sem_final_validation.json) and [test log](../reports/audit/regression_sem_final_tests.log).
-
-Compared with the preserved pre-pass files, the maximum prediction change was 6.85e-14 SOH and the maximum
-bootstrap effect-CI endpoint change was 6.13e-7. A control run using the unchanged pre-pass source reproduced the new
-prediction and SEM CSVs exactly: these differences arise on numerical reexecution, not from model/specification changes.
-The unscaled legacy SEM sensitivity changed substantially (objective about 0.590259 in the preserved table versus
-6.242571 now), also exactly reproduced by unchanged-source control. Its scale-sensitive optimizer success flag does not
-establish an adequate solution; the internally scaled primary SEM remains the reported analysis.
-Current regression metric/EOL tables omit historical rows; historical prediction metrics are now separate.
-The preserved `sem_historical_raw_units_coefficients.csv` is a legacy artifact, not an output consumed by the current pipeline.
+`requirements-regression-sem.lock.txt` lists the package versions the results were produced with.
+`sem_bootstrap_audit.csv` logs every bootstrap attempt; the number of failed attempts before 200 valid replicates
+can differ slightly between machines, so its attempt counts are not used as results.
 
 Review remains necessary for the scenario-specific anchoring strategy before group comparison, alignment with course slide p.39,
 the theoretical SEM paths, incomplete condition crossing, retrospective cleaning, absence of calibrated prediction intervals,

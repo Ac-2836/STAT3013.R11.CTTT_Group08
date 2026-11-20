@@ -1,6 +1,6 @@
 """Execute both notebooks with fresh kernels and record input/output provenance.
 
-Run from any directory: .venv/Scripts/python src/run_regression_sem.py
+Run from any directory: python src/run_regression_sem.py
 Use --cwd notebooks --verify-repro for a second run from the notebook directory.
 """
 import argparse
