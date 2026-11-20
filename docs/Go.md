@@ -306,7 +306,7 @@ Bảng số pin theo từng ô (nhiệt độ × dòng xả, chỉ tính CC):
 | Kịch bản | Mô tả | Áp dụng cho |
 |---|---|---|
 | **E1: dự báo 1 bước** | Với **40% số chu kỳ cuối** của mỗi pin test, dự báo SOH tại chu kỳ t khi đã biết thông tin đến t−1 | Cả 4 mô hình. ARIMA được fit trên 60% đầu của chính pin đó, rồi dự báo cuốn chiếu từng bước. |
-| **E2: dự báo nhiều bước / RUL** | Đứng ở mốc 60% chuỗi, dự báo đến hết chuỗi. So sánh chu kỳ dự báo chạm SOH 0,8 với chu kỳ thực tế. | Các pin test có chạm 0,8 trong dữ liệu (B0007, B0034, B0047, B0055) |
+| **E2: dự báo nhiều bước / RUL** | Đứng ở mốc 60% chuỗi, dự báo đến hết chuỗi. So sánh chu kỳ dự báo chạm SOH 0,8 với chu kỳ thực tế. Biến ngoại sinh giữ nguyên giá trị đo cuối cùng trước mốc (Rec.md 6.1 #5). | Sai số RUL chỉ tính cho B0007, B0034, B0055; B0047 đã dưới 0,8 trước mốc 60% (Rec.md 6.1 #3) |
 
 ### 4.4 Metric (Chap 3, tr. 81–86)
 - MAE, RMSE, MAPE, R² trên E1.
@@ -374,7 +374,7 @@ print(m.summary())       # R², adj R², F-test, t-test và CI của từng hệ
 
 | Bước | Làm thế nào | Vì sao (slide) |
 |---|---|---|
-| 5b.1 Chọn chuỗi | Chuỗi `capacity_int_Ah` theo `cycle_valid` của từng pin tier A. Dùng số thứ tự chu kỳ làm trục thời gian, **không dùng ngày**, vì khoảng nghỉ giữa các chu kỳ không đều. | tr. 4 |
+| 5b.1 Chọn chuỗi | Chuỗi `soh` theo `cycle_valid` (không dùng `capacity_int_Ah`, xem Rec.md 6.1 #4) của từng pin tier A. Dùng số thứ tự chu kỳ làm trục thời gian, **không dùng ngày**, vì khoảng nghỉ giữa các chu kỳ không đều. | tr. 4 |
 | 5b.2 Vẽ chuỗi | Nhận xét xu hướng giảm, các "răng cưa" sau những lần nghỉ dài, và việc không có tính mùa vụ | tr. 5–6 |
 | 5b.3 Tính dừng | ADF trên chuỗi gốc cho p = 0,53–0,89, tức không dừng. ACF giảm chậm. Lấy **sai phân bậc 1** thì ADF cho p < 0,001. | tr. 11–14, tr. 71 |
 | 5b.4 Nhận dạng mô hình | Vẽ ACF/PACF của chuỗi sai phân. PACF cắt sau lag p thì gợi ý AR(p); ACF cắt sau lag q thì gợi ý MA(q). Thử p, q ∈ {0, 1, 2}, chọn theo AIC. | tr. 47, 65–67 |
@@ -445,9 +445,9 @@ gs.fit(X_tr, y_tr, groups=g_tr)
 
 | Bước | Làm thế nào | Vì sao (slide) |
 |---|---|---|
-| 5d.1 Tạo chuỗi | Cửa sổ trượt dài 10 chu kỳ, dùng cùng bộ đặc trưng với GĐ5c, để dự báo SOH chu kỳ kế tiếp. **Không cho cửa sổ vượt qua ranh giới giữa hai pin.** | tr. 36–38 (sequence modeling) |
+| 5d.1 Tạo chuỗi | Cửa sổ trượt dài 10 chu kỳ, dùng cùng bộ đặc trưng với GĐ5c, để dự báo SOH chu kỳ kế tiếp. **Không cho cửa sổ vượt qua ranh giới giữa hai pin.** Bỏ cửa sổ có Re/Rct thiếu. Mạng học ΔSOH rồi cộng vào SOH_{t−1} (Rec.md 6.1 #6, #8). | tr. 36–38 (sequence modeling) |
 | 5d.2 Kiến trúc | LSTM 1 lớp, 32 đơn vị, dropout 0,2, Dense(1). Mô hình nhỏ để bù việc LSTM nhiều tham số trên dữ liệu ít. | tr. 57–62 (3 cổng forget/input/output, forward pass) |
-| 5d.3 Huấn luyện | Adam, loss MSE, early stopping với patience 20. Tập validation là một pin train được giữ lại. Dùng seed 42; chạy 5 seed khác nhau và báo cáo trung bình ± độ lệch chuẩn. | tr. 62 (BPTT) |
+| 5d.3 Huấn luyện | Adam, loss MSE, early stopping với patience 20. Validation bằng `GroupKFold` theo pin, k = 4, như SVR (Rec.md 6.1 #7). Dùng seed 42; chạy 5 seed khác nhau và báo cáo trung bình ± độ lệch chuẩn. | tr. 62 (BPTT) |
 | 5d.4 Đánh giá | Kịch bản E1 và E2 (E2 dự báo đệ quy), so với baseline naive, SVR và ARIMA | GĐ4 |
 | 5d.5 Diễn giải trung thực | Chỉ có khoảng 1.500 dòng tier A. Bảng so sánh ở tr. 13 nói DL cần nhiều dữ liệu. Nếu LSTM không thắng SVR thì **đó vẫn là một kết luận có giá trị**. | tr. 13–14 |
 
