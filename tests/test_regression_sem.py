@@ -1,6 +1,7 @@
 """Checks for leakage, censoring and SEM failures that previously went unnoticed."""
 from pathlib import Path
 from contextlib import ExitStack, redirect_stdout
+import os
 import hashlib
 import io
 import json
@@ -18,10 +19,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'src'))
 from regression_sem_utils import (load_cycles, regression_data, TRAIN, TEST, metrics,
                                   eol_record, origin_position, validate_predictions, SCHEMA, ROOT)
 from regression_analysis import (fit_forecasters, forecast, center, backward,
-                                 operating_condition_check, historical_predictions, evaluate_regression)
+                                 operating_condition_check, evaluate_regression)
 from sem_analysis import (prepare_sem, fit_sem, effects, PRIMARY, EXOGENOUS,
-                          block_bootstrap, historical_fit, run_sem)
+                          block_bootstrap, run_sem)
 
+
+# Fast suite (~1-2 min): python -m unittest discover -s tests
+# Full suite incl. end-to-end reruns (~10+ min): set RUN_SLOW=1 first.
+RUN_SLOW = bool(os.environ.get('RUN_SLOW'))
 
 class EOLTests(unittest.TestCase):
     def record(self, past, actual, prediction):
@@ -79,7 +84,7 @@ class ModelIntegrityTests(unittest.TestCase):
         protected = list((ROOT/'data').rglob('*')) + [ROOT/'docs/Rec.md']
         protected += [p for p in (ROOT/'src').glob('*.py') if p.name not in
                       {'regression_analysis.py','sem_analysis.py','regression_sem_utils.py',
-                       'run_regression_sem.py','write_regression_sem_reports.py'}]
+                       'run_regression_sem.py'}]
         cls.protected_hashes = {p: hashlib.sha256(p.read_bytes()).hexdigest()
                                 for p in protected if p.is_file()}
 
@@ -141,20 +146,6 @@ class ModelIntegrityTests(unittest.TestCase):
     def test_forecast_is_deterministic(self):
         pd.testing.assert_frame_equal(forecast(self.bundle, self.test), forecast(self.bundle, self.test))
 
-    def test_invalid_historical_archives_are_optional(self):
-        with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):
-            path = Path(directory)/'archive'
-            for content in [None, 'not a valid archive', '{}', '{"cells": [42]}',
-                            '{"cells": [{"outputs": [{"data": {"text/plain": "DoF Baseline RMSEA CFI"}}]}]}']:
-                if content is not None:
-                    path.write_text(content, encoding='utf-8')
-                before, status = historical_predictions(self.data, path)
-                sem, sem_status = historical_fit(path)
-                self.assertIsNone(before)
-                self.assertTrue(sem.empty)
-                self.assertTrue(status.startswith('skipped:'))
-                self.assertTrue(sem_status.startswith('skipped:'))
-
     def isolated_outputs(self, stack, root):
         (root/'reports/predictions').mkdir(parents=True)
         tables = root/'reports/tables'; tables.mkdir()
@@ -166,33 +157,32 @@ class ModelIntegrityTests(unittest.TestCase):
         stack.enter_context(patch('regression_sem_utils.TABLES', tables))
         return tables
 
-    def test_regression_without_archive_and_selection_ignores_test_outcomes(self):
+    @unittest.skipUnless(RUN_SLOW, 'slow: set RUN_SLOW=1')
+    def test_regression_selection_ignores_test_outcomes(self):
         with tempfile.TemporaryDirectory() as directory, ExitStack() as stack:
             root = Path(directory); tables = self.isolated_outputs(stack, root)
             stack.enter_context(redirect_stdout(io.StringIO()))
-            first = evaluate_regression(self.data, root/'missing.csv')
+            first = evaluate_regression(self.data)
             prediction = pd.read_csv(root/'reports/predictions/regression.csv')
             validate_predictions(prediction, self.data)
             selected = (tables/'regression_selected.json').read_bytes()
             changed = self.data.copy()
             changed.loc[changed.battery_id.isin(TEST), 'soh'] *= .9
             changed['ln_soh'] = np.log(changed.soh)
-            second = evaluate_regression(changed, root/'missing.csv')
+            second = evaluate_regression(changed)
             self.assertEqual(first['winners'], second['winners'])
             self.assertEqual(selected, (tables/'regression_selected.json').read_bytes())
-            self.assertTrue(pd.read_csv(tables/'regression_historical_metrics.csv').empty)
-            self.assertNotIn('preaudit_working_copy', first['test_metrics'].model.unique())
             self.assertEqual(first['winners'], {'E1':'anchored_loglinear', 'E2':'anchored_quadratic'})
 
-    def test_full_sem_without_archive(self):
+    @unittest.skipUnless(RUN_SLOW, 'slow: set RUN_SLOW=1')
+    def test_full_sem_reproduces_committed_tables(self):
         with tempfile.TemporaryDirectory() as directory, ExitStack() as stack:
             root = Path(directory); tables = self.isolated_outputs(stack, root)
             stack.enter_context(redirect_stdout(io.StringIO()))
-            result = run_sem(self.sem, root/'missing.ipynb')
+            result = run_sem(self.sem)
             self.assertEqual(result['bootstrap']['valid'], 200)
-            self.assertEqual(len(result['fit']), 6)
+            self.assertEqual(len(result['fit']), 5)
             self.assertEqual(len(result['coefficients']), 12)
-            self.assertTrue(pd.read_csv(tables/'sem_historical_reported.csv').empty)
             self.assertTrue((root/'reports/figures/sem_path_diagram.png').exists())
             for name, frame in [('sem_fit_comparison', result['fit']),
                                 ('sem_effects', result['effects']), ('sem_effect_intervals', result['intervals'])]:
