@@ -8,7 +8,9 @@
 > Mọi con số trong tài liệu này được tính lại trực tiếp từ 34 file `.mat` bằng pipeline trong `src/`. Không lấy số liệu từ README gốc khi chưa kiểm chứng. Chạy lại toàn bộ bằng:
 > ```bash
 > python src/build_dataset.py && python src/clean_dataset.py && python src/eda_dataset.py
+> python src/make_report_figures.py
 > ```
+> Các con số ở mục 4 và 8 lấy từ các bảng CSV trong `data/processed/`; kiểm định ADF ở F9 lấy từ `notebooks/20_arima.ipynb`.
 
 ---
 
@@ -68,7 +70,7 @@
 | Inferential (t-test, chi-square, ANOVA) | So sánh tốc độ suy giảm giữa các điều kiện, **ở mức pin** | Làm được, nhưng mỗi nhóm có ít pin (n = 2–5) |
 | Regression | ln(SOH) theo chu kỳ, điều kiện vận hành và các tương tác | Tốt |
 | SEM | Path model: điều kiện → Re/Rct → SOH | Làm được bằng biến quan sát (sau khi học Chap 7) |
-| ARIMA / Forecasting | Chuỗi dung lượng theo chu kỳ của từng pin (tối đa 196 điểm sau làm sạch; B0033/B0034 có 197 lần xả gốc) | Tốt với các pin tier A |
+| ARIMA / Forecasting | Chuỗi SOH theo chu kỳ của từng pin (tối đa 196 điểm sau làm sạch; B0033/B0034 có 197 lần xả gốc) | Tốt với các pin tier A |
 | ML / DL | Dự báo SOH chu kỳ kế tiếp từ đặc trưng lag, sạc, trở kháng | Tốt, nhưng dữ liệu nhỏ đối với DL |
 | Khuyến nghị kinh doanh | Bảo hành, quản lý đội xe, vận hành trời lạnh/nóng | Làm được. **Không có dữ liệu về thói quen sạc và không có dữ liệu chi phí.** |
 
@@ -145,23 +147,23 @@ B0005.mat
 ### F3. Lạnh + dòng lớn + cutoff cao thì gần như không xả được
 - Ở 4°C/4 A, các pin có cutoff 2,5 V và 2,7 V (B0043, B0044) chỉ xả được khoảng 0,07–0,08 Ah. Pin có cutoff 2,0 V (B0041) cũng chỉ khoảng 0,07 Ah.
 - Pin có cutoff 2,2 V (B0042) xả được khoảng 1,1 Ah, nhưng tụt xuống khoảng 0,1 Ah ở các chu kỳ 82–87.
-- Đây là **giới hạn công suất do lạnh**, không phải pin bị lão hóa: khi chuyển về 4°C/1 A, dung lượng hồi lại 1,36–1,50 Ah.
+- Đây là **giới hạn công suất do lạnh**, không phải pin bị lão hóa: khi chuyển về 4°C/1 A, dung lượng trung vị hồi lại 1,36–1,50 Ah ở B0042–B0044 và 1,02 Ah ở B0041 (cutoff 2,0 V).
 - *Ý nghĩa thực tế:* xe điện hay drone vận hành tải nặng trong trời lạnh sẽ "mất" phần lớn dung lượng **tạm thời**.
 
 ### F4. Lần xả đầu tiên không có lần sạc trước đó
 - 19 lần xả (thường là chu kỳ 1) diễn ra khi pin chưa được sạc đầy theo quy trình chuẩn, nên dung lượng không đại diện. Đã **loại**.
 
 ### F5. Dung lượng tăng tạm thời sau thời gian nghỉ dài (capacity recovery)
-Mức thay đổi dung lượng so với chu kỳ trước, tính trên các pin tier A/B:
+Mức thay đổi dung lượng so với chu kỳ trước, tính trên các pin tier A/B, **đã bỏ dòng `cap_outlier`**. ΔC = `capacity_int_Ah` trừ giá trị của dòng hợp lệ liền trước **trong cùng segment** (`src/make_report_figures.py`, hàm `fig3_rest_recovery`):
 
 | Thời gian nghỉ trước khi xả | n | Trung vị ΔC (Ah) |
 |---|---|---|
-| < 6 phút | 1.160 | −0,0074 |
+| < 6 phút | 1.159 | −0,0073 |
 | 6 phút – 1 giờ | 696 | −0,0052 |
 | 1 – 24 giờ | 61 | +0,0081 |
 | > 1 ngày | 57 | **+0,0294** |
 
-> ⚠ **Cập nhật ngày 26/10/2026:** bảng này **chưa tái tạo được** bằng pipeline mới. Chạy thử trên 22 pin tier A/B, chưa bỏ dòng gắn cờ, ΔC tính giữa hai dòng hợp lệ liền kề, cho n = 1.167 / 701 / 64 / 66 và trung vị nhóm > 1 ngày là +0,0374 Ah. Chưa rõ bảng cũ dùng tập dữ liệu và cách tính ΔC nào. Sẽ kiểm tra lại khi viết phần EDA của `src/eda_dataset.py`. **Không trích các con số trong bảng này vào báo cáo cho tới khi tái tạo được.** Kết luận định tính (dung lượng tăng sau nghỉ dài) vẫn giữ nguyên.
+> *Cập nhật ngày 21/11/2026:* bảng trên đã tái tạo được bằng code và khớp với Hình 3. Bảng cũ (n = 1.160, trung vị nhóm < 6 phút −0,0074) chỉ lệch 1 dòng. Nếu giữ cả các dòng `cap_outlier` thì n = 1.167 / 701 / 64 / 66 và trung vị nhóm > 1 ngày là +0,0374 Ah: kết luận không đổi.
 
 - Đây là hiện tượng điện hóa có thật, không phải lỗi đo, nên **không xóa**. Cột `long_rest` (nghỉ hơn 1 giờ) được tạo làm biến giải thích.
 - Đây cũng là nguồn chính tạo ra các "răng cưa" trên đường SOH (Hình 1, Hình 3).
@@ -178,9 +180,10 @@ Mức thay đổi dung lượng so với chu kỳ trước, tính trên các pin
 ![](../reports/figures/fig5_impedance_soh.png)
 
 ### F7. Đặc trưng lấy từ quá trình sạc cũng dự báo được SOH
-- Thời gian pha CC khi sạc (`chg_cc_time_s`) tương quan **0,86** với SOH ở G1.
+- Thời gian pha CC khi sạc (`chg_cc_time_s`) tương quan **0,86** với SOH ở G1 (Pearson, đã bỏ dòng `cap_outlier`; tính trên mọi dòng của G1 thì r = 0,84).
+- ⚠ Đây là tương quan với **mức** SOH. Khi đã biết SOH của các chu kỳ gần nhất, đặc trưng sạc gần như không giúp dự báo SOH chu kỳ kế tiếp (`notebooks/30_ml.ipynb`, phần trả lời RQ4). Vì vậy nó hữu ích khi **không có** lịch sử đo dung lượng, chứ không thay được lịch sử đó.
 - Biến này đo được **trước** lần xả, nên là biến dự báo hợp lệ.
-- *Ý nghĩa kinh doanh:* hệ thống quản lý pin (BMS) có thể ước lượng SOH chỉ từ lúc sạc, không cần xả kiểm tra.
+- *Ý nghĩa kinh doanh:* hệ thống quản lý pin (BMS) có thể ước lượng **gần đúng** SOH từ lúc sạc khi không có phép xả kiểm tra.
 
 ### F8. Pin chênh lệch nhau ngay từ khi mới (cell-to-cell variation)
 - Ở 24°C/2 A, C₀ của G1 dao động từ 1,85 đến 2,04 Ah (trung bình 1,91 Ah). **Không pin nào đạt 2,0 Ah danh định một cách ổn định.**
@@ -189,14 +192,14 @@ Mức thay đổi dung lượng so với chu kỳ trước, tính trên các pin
 
 ### F9. Các chu kỳ trong một pin phụ thuộc mạnh vào nhau
 - Phần dư sau khi fit xu hướng tuyến tính có tự tương quan bậc 1 là **0,40–0,93** ở các pin tier A (10/12 pin trên 0,75).
-- Kiểm định ADF: chuỗi capacity gốc **không dừng** (p = 0,53–0,89), chuỗi sai phân bậc 1 dừng (p < 0,001).
+- Kiểm định ADF trên chuỗi SOH (`notebooks/20_arima.ipynb`, mục 2): chuỗi gốc **không dừng** ở 10/12 pin tier A (p = 0,11–0,97; với 4 pin test chỉ tính phần trước mốc 60%). Hai pin ngắn ở 4°C là **B0045 (p = 0,0005) và B0055 (p = 0,0013)** cho kết quả dừng, do có nhiều bước nhảy hồi phục lớn. Chuỗi sai phân bậc 1 dừng ở cả 12 pin (p < 0,001).
 - **Hệ quả:**
   - Kiểm định suy diễn phải dùng **pin** làm đơn vị quan sát.
-  - ARIMA cần d = 1.
+  - ARIMA dùng d = 1 cho mọi pin (nhóm chọn để thống nhất dạng mô hình; lý do ở `20_arima.ipynb` mục 2).
   - Chia train/test phải theo pin, không chia ngẫu nhiên theo chu kỳ.
 
 ### F10. Một số giai đoạn sụt bất thường
-- **B0033:** 6 chu kỳ break-in đầu (0,72 → 1,38 Ah, sau đó lên 1,84 Ah). Thêm một đợt sụt ở chu kỳ 139–148 xuống còn 0,22–0,53 Ah, rồi hồi phục về 1,6 Ah.
+- **B0033:** 6 chu kỳ break-in đầu (0,72 → 1,38 Ah, sau đó lên 1,84 Ah). Thêm một đợt sụt bắt đầu ở chu kỳ 139 (1,12 Ah), xuống còn 0,22–0,53 Ah ở chu kỳ 140–147, rồi hồi phục về 1,60 Ah ở chu kỳ 148.
 - Đây là kiểu *collective anomaly* (Chap 6, tr. 69). Đã gắn cờ `break_in` và `cap_outlier` nhưng **không xóa**.
 
 ### F11. Pin hỏng hoặc dữ liệu hỏng
@@ -213,7 +216,10 @@ Mức thay đổi dung lượng so với chu kỳ trước, tính trên các pin
 | 1. Parse | `src/build_dataset.py` | Làm phẳng struct lồng nhau (semi-structured) thành bảng structured. Gộp hàng trăm/nghìn điểm đo thành **1 dòng mỗi thao tác**. Chuyển datevec sang datetime, số phức sang số thực. | Chap 1 tr. 13 (phân loại dữ liệu), tr. 15–16 (format transformation, aggregation) |
 | 2. Join | `build_dataset.py` | Mỗi lần xả được ghép với lần sạc ngay trước nó (`merge_asof` theo `op_index`) và lần EIS gần nhất **trước** nó. Ghép thêm metadata. | Chap 1 tr. 16 (data integration) |
 | 3. Clean | `src/clean_dataset.py` | Áp dụng các quy tắc loại bỏ (bảng dưới), lọc trở kháng, chia segment, tính C₀/SOH, gắn cờ outlier/break-in, xếp tier cho từng pin. | Chap 1 tr. 17 (missing data), Chap 6 tr. 69 (anomaly) |
-| 4. EDA | `src/eda_dataset.py` | Thống kê mô tả, tốc độ suy giảm theo pin, kiểm định ADF, các hình 1–6. | Chap 1 §3–4, Chap 5 tr. 11–14 |
+| 4. Tốc độ suy giảm | `src/eda_dataset.py` | Tốc độ suy giảm theo pin (`battery_fade.csv`). | Chap 1 §3–4 |
+| 5. Hình | `src/make_report_figures.py` | Các hình 1–6 của tài liệu này, vẽ từ `data/processed/`. | Chap 1 tr. 59–63 |
+
+Thống kê mô tả đầy đủ ở `notebooks/01_descriptive.ipynb`; kiểm định ADF ở `notebooks/20_arima.ipynb`.
 
 **Quy tắc loại bỏ** (tổng 2.794 dòng → còn **2.658** dòng hợp lệ):
 
@@ -318,7 +324,7 @@ soh_segment = capacity_int_Ah / C0 của segment đó   (áp dụng cho mọi pi
 | Tier | Quy tắc (tự động, trong `clean_dataset.py`) | Pin | Số dòng | Dùng cho |
 |---|---|---|---|---|
 | **A**: điều kiện không đổi, chạy dài, đã suy giảm rõ | 1 segment, ≥ 60 chu kỳ, SOH_min ≤ 0,85 | B0005, 06, 07, 18, B0033, 34, B0045–48, B0055, 56 | 1.503 | Hồi quy, ARIMA, ML/DL, dự báo RUL |
-| **B**: điều kiện không đổi nhưng ngắn hoặc suy giảm ít | 1 segment, không đạt điều kiện tier A | B0025–28, B0029–32, B0036, B0053 | 517 | So sánh tốc độ suy giảm giữa các điều kiện. Dùng làm pin test. |
+| **B**: điều kiện không đổi nhưng ngắn hoặc suy giảm ít | 1 segment, không đạt điều kiện tier A | B0025–28, B0029–32, B0036, B0053 | 517 | So sánh tốc độ suy giảm giữa các điều kiện (thống kê mô tả, suy diễn, SEM). Không dùng cho mô hình dự báo. |
 | **C**: điều kiện thay đổi | Từ 2 segment trở lên | B0038–40, B0041–44 | 537 | Đo hiệu ứng thuận nghịch của nhiệt độ và dòng xả lên dung lượng tức thời |
 | **N**: nhiễu | Trên 10% số chu kỳ là outlier | B0054 | 101 | Chỉ dùng để kiểm tra độ vững |
 | **X**: loại bỏ | Dữ liệu hỏng | B0049–B0052 | 0 | – |
@@ -391,9 +397,11 @@ Các nhận xét dưới đây **là giả thuyết, sẽ kiểm định ở Cha
 
 ### 9.2 Phần modeling: mỗi người một thuật toán, dùng **chung dữ liệu và chung cách đánh giá**
 
+> Bảng dưới là **kế hoạch ban đầu**. Cài đặt thật (lưới siêu tham số, đặc trưng, cách huấn luyện) và kết quả nằm trong notebook của từng mô hình (`10_regression`, `20_arima`, `30_ml`, `40_dl`, `50_sem`) và so sánh chung ở `60_compare`.
+
 **Quy ước chung bắt buộc:**
 - Biến mục tiêu là `soh`, dùng tier A, bỏ các dòng `cap_outlier` và `break_in`.
-- **Chia train/test theo pin**, mỗi điều kiện có một pin test. Đề xuất: test = {B0007 (G1), B0034 (G4), B0047 (G7), B0055 (G9)}, train là các pin tier A còn lại. Có thể bổ sung leave-one-battery-out để kiểm tra độ vững.
+- **Chia train/test theo pin**, mỗi điều kiện có một pin test: test = {B0007 (G1), B0034 (G4), B0047 (G7), B0055 (G9)}, train là 8 pin tier A còn lại (đã chốt ở [Rec.md](Rec.md) mục 6, cài trong `src/protocol.py`).
 - Metric chung: MAE, RMSE, MAPE, R² (Chap 3 tr. 81–86). Báo cáo trên **cùng một tập test** để ghép được vào một bảng so sánh.
 - **Cấm làm rò rỉ dữ liệu:**
   - Không dùng `energy_Wh`, `duration_s`, `t_to_cutoff_s`, `capacity_*` của **cùng chu kỳ** làm biến dự báo.
@@ -402,7 +410,7 @@ Các nhận xét dưới đây **là giả thuyết, sẽ kiểm định ở Cha
 | Thành viên | Thuật toán | Dữ liệu và cách dựng | Câu hỏi trả lời |
 |---|---|---|---|
 | **Quốc Đạt** (thống kê truyền thống) | **Hồi quy bội log-linear có tương tác** (Chap 3) | Biến phụ thuộc ln(soh). Biến giải thích: cycle_valid, dummy nhiệt độ (k−1), I_level_A, cutoff, các tương tác cycle×dummy. Kiểm tra VIF: Re/Rct tương quan 0,97 trong G1 nhưng chỉ 0,43 trên tier A. Kiểm tra residual plot. Thêm phiên bản 2 bước trên `battery_fade.csv`. | Mỗi yếu tố làm SOH thay đổi bao nhiêu % mỗi chu kỳ |
-| **Tiến Hưng** (thống kê truyền thống) | **ARIMA / ARIMAX** (Chap 5) | Chuỗi `capacity_int_Ah` theo `cycle_valid` của từng pin tier A. Dùng d = 1 (ADF đã xác nhận). Biến ngoại sinh: `rest_before_h` để giải thích F5, `Rct_ohm`. Không cần SARIMA vì không có tính mùa vụ cố định. | Dự báo SOH ngắn hạn, thời điểm chạm 80%, giá trị của biến ngoại sinh |
+| **Tiến Hưng** (thống kê truyền thống) | **ARIMA / ARIMAX** (Chap 5) | Chuỗi `soh` theo `cycle_valid` của từng pin tier A (Rec.md mục 6.1 #4). Dùng d = 1 cho mọi pin (F9). Biến ngoại sinh: `rest_before_h` để giải thích F5, `Rct_ohm`. Không cần SARIMA vì không có tính mùa vụ cố định. | Dự báo SOH ngắn hạn, thời điểm chạm 80%, giá trị của biến ngoại sinh |
 | **Minh Vũ** (ML) | **SVR** (Chap 6) | Đặc trưng: SOH từ lag 1 đến lag 5, rolling mean, `chg_cc_time_s`, Re, Rct, `T_max` của chu kỳ trước, điều kiện vận hành, `rest_before_h`. Scale bằng z-score, chỉ fit trên train. | Dự báo SOH chu kỳ kế tiếp. Permutation importance để đối chiếu với kết quả hồi quy của Quốc Đạt. |
 | **Khải Hưng** (DL, Leader) | **LSTM** (Chap 6) | Đầu vào là cửa sổ 10 chu kỳ (cùng bộ đặc trưng với SVR), đầu ra là SOH chu kỳ kế. Mô hình nhỏ (1 lớp, 32 đơn vị), dùng early stopping. Chỉ có khoảng 1.500 dòng tier A, nên báo cáo trung thực nếu mô hình không thắng ML (Chap 6 tr. 13). | ML và DL có khác biệt gì trên dữ liệu nhỏ |
 
