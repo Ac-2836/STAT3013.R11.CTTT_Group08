@@ -953,3 +953,23 @@ Bảng so khớp:
 - ARIMA dự báo `soh`, không phải dung lượng; tier B không dùng làm pin test; `eda_dataset.py` chỉ tạo `battery_fade.csv`.
 - Go.md: bảng "khoảng dự báo" của các mô hình; hai khuyến nghị ở mục 8 (nhiệt độ cao, ước lượng SOH khi sạc) viết lại theo kết quả kiểm định T1 và RQ4; trạng thái các giai đoạn đã xong.
 - README: cây thư mục, bảng file, các bước tái lập.
+
+### [21/11/2026] Khải Hưng · branch `khai-hung` · Mô hình thứ 5: đường cong suy giảm Bayes phân tầng (hybrid)
+
+**Vì sao.** Ở E2 cả 4 mô hình gốc thua naive, và gần như mọi mô hình dự báo pin xuống cấp nhanh hơn thực tế (sai số có dấu trung bình âm ở hầu hết các pin test). Naive không bao giờ cảnh báo EOL.
+
+**Kiểm tra khả thi (chỉ 8 pin train, mốc 60% giả, mỗi pin lần lượt làm "pin test", prior từ 7 pin còn lại).** Đường cong `c − a·t^b` fit riêng từng pin: quá bi quan (MAE E2 0,0517); chỉ dùng hình dạng của các pin khác: quá lạc quan, không bao giờ cảnh báo (MAE 0,0283, sensitivity 0); kết hợp bằng Bayes và neo tại trung bình 5 SOH cuối: MAE 0,0237 so với naive 0,0365, sensitivity 1,00, specificity 0,71. w từ 0,003 đến 0,1 cho kết quả gần như nhau; tính w từ tự tương quan phần dư cho 0,0252; chọn w = 0,03. E1: SOH trước + bước của đường cong (0,0081 so với naive 0,0087); thêm thời gian nghỉ không giúp (0,0084), nên bỏ.
+
+**Chốt trước khi chạy test:** Rec.md mục 8, commit `6d186ac`. Sau đó chạy pin test đúng một lần.
+
+**Kết quả test** (`src/hybrid_model.py`, `notebooks/70_hybrid.ipynb`, `reports/predictions/hybrid.csv`):
+- E2 MAE 0,0226, mô hình duy nhất thấp hơn naive (0,0249); Diebold–Mariano so với naive p = 0,59 (không có ý nghĩa), so với LSTM p < 0,001. Phần thắng đến từ B0007; trên 3 pin đi ngang naive tốt hơn.
+- E1 MAE 0,0115 (naive 0,0119, LSTM 0,0098).
+- RUL: −4 (B0007), −19 (B0034), +32 (B0055). Hai pin đầu là sai số nhỏ nhất trong mọi mô hình.
+- Cảnh báo H = 20: sensitivity 0,89, specificity 0,55.
+- Độ phủ khoảng 95%: E1 90,1%, E2 85,0%; cận dưới của E2 rất rộng, có chỗ phi vật lý.
+- Chi phí chính sách "thay ở cảnh báo đầu tiên" (3 pin; R = chi phí hỏng quy ra chu kỳ): hybrid = 63 + R, rẻ hơn naive (3R) khi R > 31,5; trên 3 pin này ARIMAX rẻ nhất ở mọi R (29 + R), nhờ riêng B0055.
+
+**Cập nhật kèm theo:** `compare_models.py` và `60_compare` thêm mô hình thứ 7 trong bảng so sánh; README, Go.md (RQ7, bảng so sánh), Introduction_of_dataset.md.
+
+**Kiểm tra độ vững trên 12 pin (thêm sau khi chạy test, ghi ở Rec.md mục 8).** Giữ nguyên thiết kế, leave-one-cell-out trên 12 pin tier A, prior từ 11 pin còn lại. E2: MAE 0,0184 so với naive 0,0323 (thấp hơn 43%), Diebold–Mariano p < 0,001, hybrid tốt hơn ở 8/12 pin (thua ở B0034, B0047, B0048, B0055, các pin đi ngang sau mốc). E1: 0,0094 so với 0,0098, p < 0,001, tốt hơn ở 10/12 pin. Cảnh báo H = 20: sensitivity 0,82, specificity 0,81 (naive 0 và 1). Chỉ là bằng chứng hỗ trợ vì w được chọn trên 8 trong 12 pin.

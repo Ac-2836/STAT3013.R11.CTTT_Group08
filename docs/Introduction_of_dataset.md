@@ -397,7 +397,7 @@ Các nhận xét dưới đây **là giả thuyết, sẽ kiểm định ở Cha
 
 ### 9.2 Phần modeling: mỗi người một thuật toán, dùng **chung dữ liệu và chung cách đánh giá**
 
-> Bảng dưới là **kế hoạch ban đầu**. Cài đặt thật (lưới siêu tham số, đặc trưng, cách huấn luyện) và kết quả nằm trong notebook của từng mô hình (`10_regression`, `20_arima`, `30_ml`, `40_dl`, `50_sem`) và so sánh chung ở `60_compare`.
+> Bảng dưới là **kế hoạch ban đầu**. Cài đặt thật (lưới siêu tham số, đặc trưng, cách huấn luyện) và kết quả nằm trong notebook của từng mô hình (`10_regression`, `20_arima`, `30_ml`, `40_dl`, `50_sem`, và mô hình thứ 5 `70_hybrid`) và so sánh chung ở `60_compare`.
 
 **Quy ước chung bắt buộc:**
 - Biến mục tiêu là `soh`, dùng tier A, bỏ các dòng `cap_outlier` và `break_in`.

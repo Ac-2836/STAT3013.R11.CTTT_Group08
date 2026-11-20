@@ -55,6 +55,7 @@ Toàn bộ đồ án đi theo mạch dưới đây. Mạch này cũng khớp v�
 | RQ4 | Mô hình ML với đặc trưng sạc và trở kháng dự báo SOH chu kỳ kế tiếp tốt đến đâu? Đặc trưng nào quan trọng nhất? | SVR (Chap 6) | Minh Vũ |
 | RQ5 | Mô hình DL trên chuỗi đặc trưng có hơn ML trên dữ liệu nhỏ không? | LSTM (Chap 6) | Khải Hưng |
 | RQ6 | Có phải điều kiện vận hành tác động lên SOH thông qua trở kháng không? | SEM / path analysis (Chap 7) | Quốc Đạt và Tiến Hưng |
+| RQ7 | Mô hình kết hợp đường cong suy giảm chung, lịch sử riêng của pin và quan sát gần nhất có dự báo EOL tốt hơn và hỗ trợ quyết định thay pin không? *(thêm ngày 21/11/2026)* | Hybrid Bayes (Rec.md mục 8, `70_hybrid.ipynb`) | Khải Hưng |
 
 ### 1.3 Lịch tổng
 
@@ -501,10 +502,11 @@ class LSTMReg(nn.Module):
 | ARIMA / ARIMAX | | | | | | Trung bình | Có (E1 và E2) | |
 | SVR | | | | | | Trung bình | Chỉ E1 (conformal) | |
 | LSTM | | | | | | Thấp | Không | |
+| Hybrid Bayes (thêm 21/11/2026) | | | | | | Cao (tham số đường cong) | Có (E1 và E2) | |
 
 **Thêm:**
 - Sai số tách theo từng pin test (tức theo từng điều kiện vận hành), để biết mô hình nào yếu ở điều kiện nào.
-- **Sensitivity của cảnh báo EOL (Chap 4):** từ dự báo của mỗi mô hình, suy ra cảnh báo "pin chạm SOH 0,8 trong 20 chu kỳ tới (có/không)". Tính sensitivity, specificity và confusion matrix cho từng mô hình. Không fit thêm mô hình thứ 5. Đây là phần đáp ứng mục "sensitivity" trong yêu cầu so sánh mô hình của đề cương.
+- **Sensitivity của cảnh báo EOL (Chap 4):** từ dự báo của mỗi mô hình, suy ra cảnh báo "pin chạm SOH 0,8 trong 20 chu kỳ tới (có/không)". Tính sensitivity, specificity và confusion matrix cho từng mô hình. Không fit thêm mô hình thứ 5. Đây là phần đáp ứng mục "sensitivity" trong yêu cầu so sánh mô hình của đề cương. *Thay đổi ngày 21/11/2026: có thêm mô hình thứ 5 (Rec.md mục 8).*
 
 **Kết luận theo từng RQ:** mỗi RQ trả lời bằng 2–3 câu, mỗi câu đều có con số kèm theo.
 

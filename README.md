@@ -19,6 +19,7 @@ SOH is defined as `SOH = C / C0`, the current discharge capacity divided by the 
 | RQ4 | How well do charge and impedance features predict the next-cycle SOH? | SVR |
 | RQ5 | Does a sequence model beat classical ML on this small dataset? | LSTM |
 | RQ6 | Do operating conditions act on SOH through internal resistance? | SEM / path analysis |
+| RQ7 | Does a model that combines the population degradation curve, the cell's own history and its latest observation forecast end of life better, and support replacement decisions? | Hybrid Bayesian degradation curve (fifth model, added 21/11/2026) |
 
 ## 2. Expected outputs
 
@@ -58,6 +59,7 @@ The workflow follows the four analytics levels taught in the course:
    | Traditional statistics | ARIMA / ARIMAX | Tien Hung |
    | Machine Learning | SVR (Support Vector Regression) | Minh Vu |
    | Deep Learning | LSTM | Khai Hung |
+   | Hybrid (added after the four models) | Hierarchical Bayesian degradation curve anchored to the latest observation | Khai Hung |
 
 4. **Structural**: SEM / path analysis, operating conditions -> impedance (Re, Rct) -> SOH.
 5. **Prescriptive**: recommendations for warranty, fleet maintenance and users.
@@ -90,12 +92,12 @@ The workflow follows the four analytics levels taught in the course:
 │   ├── protocol.py                                               # shared split and scoring
 │   ├── descriptive_stats.py   iforest_check.py                   # descriptive, outlier cross-check
 │   ├── regression_analysis.py   sem_analysis.py   regression_sem_utils.py   run_regression_sem.py
-│   ├── svr_model.py   lstm_model.py
+│   ├── svr_model.py   lstm_model.py   hybrid_model.py
 │   └── compare_models.py                                         # model comparison, EOL alarm
 ├── notebooks/
 │   ├── 01_descriptive.ipynb   02_inferential.ipynb
 │   ├── 10_regression.ipynb   20_arima.ipynb   30_ml.ipynb   31_iforest.ipynb
-│   ├── 40_dl.ipynb   50_sem.ipynb   60_compare.ipynb
+│   ├── 40_dl.ipynb   50_sem.ipynb   60_compare.ipynb   70_hybrid.ipynb
 ├── tests/
 │   └── test_regression_sem.py
 ├── reports/
@@ -126,10 +128,11 @@ The workflow follows the four analytics levels taught in the course:
 | `src/descriptive_stats.py`, `src/iforest_check.py` | Descriptive statistics; Isolation Forest cross-check of the outlier flags. |
 | `src/regression_analysis.py`, `src/sem_analysis.py`, `src/regression_sem_utils.py`, `src/run_regression_sem.py` | Log-linear regression and SEM; `run_regression_sem.py` executes both notebooks. |
 | `src/svr_model.py`, `src/lstm_model.py` | SVR and LSTM models. |
+| `src/hybrid_model.py` | Fifth model: hierarchical Bayesian degradation curve, EOL probability and replacement-cost analysis (design in `docs/Rec.md` section 8). |
 | `src/compare_models.py` | Scores every prediction file, RUL errors and the EOL-alarm sensitivity/specificity. |
 | `tests/` | Automated checks for regression and SEM (`python -m unittest discover -s tests`). |
 | `reports/tables/` | CSV tables produced by the notebooks and scripts. |
-| `notebooks/` | One notebook per analysis step, runnable top to bottom: `01` descriptive, `02` inferential, `10` regression, `20` ARIMA, `30` SVR, `31` Isolation Forest, `40` LSTM, `50` SEM, `60` model comparison. |
+| `notebooks/` | One notebook per analysis step, runnable top to bottom: `01` descriptive, `02` inferential, `10` regression, `20` ARIMA, `30` SVR, `31` Isolation Forest, `40` LSTM, `50` SEM, `60` model comparison, `70` hybrid model. |
 | `reports/figures/` | Figures used in the report, paper and slides. |
 | `reports/predictions/` | One prediction CSV per model in a common format, read by the comparison notebook. |
 | `docs/` | Project documentation. |
@@ -166,11 +169,12 @@ python src/clean_dataset.py
 python src/eda_dataset.py
 python src/make_report_figures.py    # 2. dataset figures fig1-fig6
 python src/run_regression_sem.py     # 3. regression and SEM notebooks
-python src/compare_models.py         # 4. model comparison tables and figures
-python -m unittest discover -s tests # 5. checks (set RUN_SLOW=1 for the slow end-to-end tests)
+python src/hybrid_model.py           # 4. fifth model: predictions, tables, figure
+python src/compare_models.py         # 5. model comparison tables and figures
+python -m unittest discover -s tests # 6. checks (set RUN_SLOW=1 for the slow end-to-end tests)
 ```
 
-The other notebooks (`01`, `02`, `20`, `30`, `31`, `40`, `60`) run top to bottom from the `notebooks/` folder. Steps 2-5 only need `data/processed/`, which is already in the repository.
+The other notebooks (`01`, `02`, `20`, `30`, `31`, `40`, `60`, `70`) run top to bottom from the `notebooks/` folder. Steps 2-6 only need `data/processed/`, which is already in the repository.
 
 ## 8. Reference
 

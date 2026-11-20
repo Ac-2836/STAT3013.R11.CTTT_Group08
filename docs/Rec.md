@@ -159,7 +159,7 @@ Danh sách cột đầy đủ của mọi file đầu ra ở [Introduction_of_da
 | Baseline bắt buộc | Naive: SOH chu kỳ sau = SOH chu kỳ trước |
 | Định dạng dự báo | `reports/predictions/<model>.csv` với các cột `model, battery_id, cycle_valid, scenario, y_true, y_pred, y_lower, y_upper` |
 
-**Sensitivity (tạm chốt):** từ dự báo của mỗi mô hình, suy ra cảnh báo "pin chạm EOL trong 20 chu kỳ tới (có/không)", rồi tính sensitivity, specificity và confusion matrix theo Chap 4. Không fit thêm mô hình thứ 5. Người làm: Khải Hưng, trong giai đoạn so sánh mô hình.
+**Sensitivity (tạm chốt):** từ dự báo của mỗi mô hình, suy ra cảnh báo "pin chạm EOL trong 20 chu kỳ tới (có/không)", rồi tính sensitivity, specificity và confusion matrix theo Chap 4. Không fit thêm mô hình thứ 5. Người làm: Khải Hưng, trong giai đoạn so sánh mô hình. *Thay đổi ngày 21/11/2026: thêm một mô hình thứ 5, xem mục 8 (lý do: không mô hình nào thắng naive ở E2, và naive không bao giờ cảnh báo EOL).*
 
 ### 6.1 Chi tiết thực thi giao thức (chốt ngày 02/11/2026)
 
@@ -194,3 +194,28 @@ Giao thức ở bảng trên đã được cài trong `src/protocol.py` (`load_s
 | 8:30–9:30 | Khuyến nghị | Cả nhóm |
 
 - **Streamlit app:** chọn một pin, xem SOH thực tế và dự báo, cảnh báo sắp chạm EOL.
+
+---
+
+## 8. Mô hình thứ 5: đường cong suy giảm Bayes phân tầng neo tại quan sát gần nhất (chốt ngày 21/11/2026, TRƯỚC khi chạy trên pin test)
+
+**Lý do thêm.** Ở E2 cả 4 mô hình gốc đều thua naive, và gần như mọi mô hình dự báo pin xuống cấp nhanh hơn thực tế. Naive thì không bao giờ cảnh báo EOL (sensitivity 0). Mô hình mới nhắm đúng câu hỏi kinh doanh: **khi nào thay pin**.
+
+**Ghi chú trung thực.** Mô hình được thiết kế **sau khi** đã thấy kết quả test của 4 mô hình gốc. Mọi lựa chọn dưới đây được quyết định **chỉ bằng CV trên 8 pin train** (mỗi pin train lần lượt làm "pin test", mốc 60% giả, prior học từ 7 pin còn lại). Pin test chỉ được chạy **một lần**, sau commit này. Report và paper phải ghi rõ điều này.
+
+| # | Mục | Quyết định |
+|---|---|---|
+| 1 | Dạng đường cong | `SOH(t) = c − a·t^b`, `t` = `cycle_valid`; tham số θ = (c, ln a, ln b) |
+| 2 | Prior (tầng 1) | Fit bình phương tối thiểu θ trên toàn chuỗi của từng pin train; prior Gauss với trung bình và hiệp phương sai của các θ đó (8 pin khi chạy test; 7 pin khi CV) |
+| 3 | Cập nhật cho từng pin (tầng 2) | MAP của `w · SSE / s² + (θ − μ)ᵀ Σ⁻¹ (θ − μ)` trên lịch sử trước mốc của chính pin; `s²` = phương sai phần dư khi fit tự do trên lịch sử đó; **w = 0,03 cố định** (giảm trọng số dữ liệu vì các chu kỳ liền nhau tự tương quan mạnh). CV trên pin train: w từ 0,003 đến 0,1 cho MAE E2 0,023–0,024; tính w từ tự tương quan của phần dư cho 0,025 |
+| 4 | E2 | Đường cong MAP, **neo** để giá trị tại chu kỳ cuối trước mốc bằng trung bình 5 SOH quan sát cuối trước mốc |
+| 5 | E1 | SOH quan sát ở dòng trước + (đường cong tại t − đường cong tại t−1). Đã thử thêm hiệu ứng thời gian nghỉ `log1p(rest_before_h)`: CV trên pin train không cải thiện (MAE 0,0084 so với 0,0081), nên **không dùng** |
+| 6 | Khoảng dự báo 95% | E1: ± phân vị 95% của \|sai số\| E1 trên CV pin train. E2: phân vị 2,5% và 97,5% của (đường cong lấy mẫu từ xấp xỉ Laplace của hậu nghiệm, đã neo) + nhiễu N(0, s²) |
+| 7 | Xác suất EOL | P(chạm SOH < 0,8 trong H chu kỳ tới) = tỉ lệ mẫu hậu nghiệm (đã neo, không cộng nhiễu) chạm 0,8 trước t + H |
+| 8 | Thước đo chính | Giống mọi mô hình (Rec.md mục 6, 6.1): MAE/RMSE/MAPE/R² ở E1 và E2, sai số RUL, cảnh báo EOL H = 20 theo đúng luật của `60_compare`. **Kiểm định Diebold–Mariano** (sai số tuyệt đối, phương sai HAC) so với naive và với LSTM, trên 213 dòng E2 và E1 |
+| 9 | Phân tích chi phí thay pin | Mỗi pin test đi từ mốc: thay pin ở dòng đầu tiên có cảnh báo. Thay ở t trước EOL thật thì chi phí = số chu kỳ còn lại bị bỏ phí (EOL thật − t); không cảnh báo trước EOL thật thì chi phí = R (chi phí hỏng đột xuất, quy ra số chu kỳ). R ∈ {10, 20, 50, 100}. Cảnh báo của các mô hình dùng dự báo điểm như `60_compare`; mô hình mới dùng ngưỡng xác suất **p\* = 0,5** cho bảng chính, các ngưỡng khác chỉ để mô tả |
+| 10 | Tên trong file dự báo | `hybrid` (`reports/predictions/hybrid.csv`). Code `src/hybrid_model.py`, notebook `notebooks/70_hybrid.ipynb`. Người làm: Khải Hưng |
+
+**Kết quả CV trên 8 pin train (mốc 60% giả, 383 dòng E2):** MAE E2 0,0237 so với naive 0,0365; cảnh báo H = 20: sensitivity 1,00, specificity 0,71 (naive 0 và 1,00); E1 MAE 0,0081 so với naive 0,0087. Đây là số lạc quan vì w được chọn trên chính các pin này; bằng chứng thật là lần chạy duy nhất trên pin test.
+
+**Bổ sung ngày 21/11/2026, SAU khi chạy test:** vì 4 pin test cho ít bằng chứng thống kê (Diebold–Mariano so với naive ở E2: p = 0,59), thêm một kiểm tra độ vững: giữ nguyên thiết kế (không chỉnh gì), leave-one-cell-out trên cả 12 pin tier A, prior từ 11 pin còn lại (`hybrid_loco12_*.csv`). Đây chỉ là bằng chứng hỗ trợ, vì w được chọn trên 8 trong 12 pin đó; kết quả chính vẫn là lần chạy test.
