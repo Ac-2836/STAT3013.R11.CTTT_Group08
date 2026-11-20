@@ -42,6 +42,8 @@
 
 **Cập nhật ngày 26/10/2026:** đã viết lại `src/build_dataset.py`, `src/clean_dataset.py` và phần `battery_fade.csv` của `src/eda_dataset.py`. Chạy lại ra đúng mọi con số đối chiếu ở mục 2.1 (các script tự kiểm tra bằng `assert`). Chi tiết quá trình ở [Work_log.md](Work_log.md). Script ở commit `5121e3f` (branch `khai-hung`), chưa qua review của nhóm (WBS C1.4).
 
+**Cập nhật ngày 21/11/2026:** pipeline đã được merge vào `main`. Chạy lại từ 34 file `.mat` trong một bản sao sạch cho ra 8 file CSV giống từng byte với bản đã commit; mọi con số đối chiếu ở mục 2.1 và 2.2 vẫn đúng.
+
 ### 2.1 Chi tiết thực thi (chốt ngày 26/10/2026)
 
 Bảng trên chốt **tham số**. Bảng dưới chốt **cách cài đặt** của từng quyết định. Các quy tắc này giữ đúng như bản `clean_dataset.py` cũ, để bản làm lại cho ra đúng các con số đã chốt.
@@ -78,7 +80,7 @@ Các điểm dưới đây docs cũ chưa định nghĩa. Mỗi điểm được
 |---|---|---|---|
 | 1 | Đường dẫn dữ liệu | File `.mat`, `metadata.csv` và README gốc nằm trong `data/raw/`. **Không bao giờ commit dữ liệu gốc**; chỉ `data/raw/README.md` (link Google Drive) và `.gitkeep` lên repo. README gốc của dataset đổi tên thành `data/raw/README_dataset.md` để không đè file của repo. | Khớp README và Go.md; bản sao lưu nằm trên Google Drive |
 | 2 | Xả (bước 2) | `duration_s` = `Time[-1]`; `t_to_cutoff_s` = `Time` của mẫu có tải cuối cùng; `energy_Wh` = tích phân hình thang của V × dòng tải (chỉ mẫu có tải) / 3.600; `T_start_C` = nhiệt độ mẫu đầu; `T_max_C`, `T_mean_C` = max, mean trên toàn chuỗi | Không cần metadata nên tính được ngay khi parse |
-| 3 | Sạc (bước 3) | `chg_duration_s` = `Time[-1]`; `chg_end_time` = `start_time` + `chg_duration_s`; `chg_charge_Ah` = hình thang của I chỉ trên mẫu I > 0,1 A; `chg_cc_time_s` = `Time` của mẫu đầu tiên có `Voltage_measured` ≥ 4,2 V (NaN nếu không chạm: 5 lần sạc); `chg_T_max_C` = max nhiệt độ | `long_rest` ra đúng 167; tương quan `chg_cc_time_s`–SOH ở G1 = 0,859 (khớp F7). Phương án "mẫu cuối có dòng 1,4–1,6 A" bị loại vì ngưỡng tự đặt, không có trong quy trình. |
+| 3 | Sạc (bước 3) | `chg_duration_s` = `Time[-1]`; `chg_end_time` = `start_time` + `chg_duration_s`; `chg_charge_Ah` = hình thang của I chỉ trên mẫu I > 0,1 A; `chg_cc_time_s` = `Time` của mẫu đầu tiên có `Voltage_measured` ≥ 4,2 V (NaN nếu không chạm: 5 lần sạc); `chg_T_max_C` = max nhiệt độ | `long_rest` ra đúng 167; tương quan `chg_cc_time_s`–SOH ở G1 = 0,859 trên các dòng đã bỏ `cap_outlier` (0,844 nếu tính mọi dòng; khớp F7). Phương án "mẫu cuối có dòng 1,4–1,6 A" bị loại vì ngưỡng tự đặt, không có trong quy trình. |
 | 4 | EIS (bước 4) | Re/Rct là số phức có phần ảo ≠ 0 thì đặt NaN (9 lần đo, đều thuộc G8). `impedance_ops.csv` giữ giá trị thô; lọc (0; 0,5) Ω làm ở bước làm sạch. | Kết quả fit hỏng không nên giữ một nửa |
 | 5 | Ghép (bước 5) | Thêm cột `n_chg_since_prev_dis`. Từ metadata chỉ lấy `group`, `discharge_cutoff_V` và `profile` (suy từ `discharge_protocol`). `build_dataset.py` tự kiểm tra bằng `assert`. | Trên dòng hợp lệ: 0 → 3 dòng, 1 → 2.639, 2 → 16. Cutoff trong metadata khớp dữ liệu ở cả 30 pin; chỉ G2 là xung vuông. |
 | 6 | Loại dòng (bước 6) | 136 dòng bị loại ghi vào `cycles_dropped.csv` kèm `drop_reason`; `cycles_clean.csv` không có cột này | Phục vụ review của Tiến Hưng (Go.md 1.6) |

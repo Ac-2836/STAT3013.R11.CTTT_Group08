@@ -61,13 +61,13 @@ Toàn bộ đồ án đi theo mạch dưới đây. Mạch này cũng khớp v�
 | Giai đoạn | Nội dung | Thời gian | Người phụ trách chính | Trạng thái |
 |---|---|---|---|---|
 | GĐ0 | Chốt đề tài, setup repo và môi trường | trước 23/10 | Khải Hưng | ✅ |
-| GĐ1 | Hiểu dữ liệu, pipeline parse và làm sạch | 23/10–27/10 | Khải Hưng (cả nhóm review) | ⏳ (làm lại từ đầu; các quyết định đã chốt ở Rec.md) |
-| GĐ2 | Thống kê mô tả | 26/10–29/10 | Cả nhóm (lead: Minh Vũ) | ⏳ |
-| GĐ3 | Thống kê suy diễn | 29/10–02/11 | Cả nhóm (lead: Tiến Hưng) | ⏳ |
-| GĐ4 | Chốt giao thức mô hình chung (split, metric, baseline) | 02/11–03/11 | Khải Hưng | ⏳ |
-| GĐ5 | Modeling song song, 4 thuật toán | 03/11–15/11 | Mỗi người một mô hình | ⏳ |
-| GĐ6 | SEM (sau khi học Chap 7) | 16/11–19/11 | Quốc Đạt, Tiến Hưng | ⏳ |
-| GĐ7 | So sánh mô hình và tổng hợp kết quả | 16/11–18/11 | Khải Hưng | ⏳ |
+| GĐ1 | Hiểu dữ liệu, pipeline parse và làm sạch | 23/10–27/10 | Khải Hưng (cả nhóm review) | ✅ |
+| GĐ2 | Thống kê mô tả | 26/10–29/10 | Cả nhóm (lead: Minh Vũ) | ✅ `01_descriptive.ipynb` |
+| GĐ3 | Thống kê suy diễn | 29/10–02/11 | Cả nhóm (lead: Tiến Hưng) | ✅ `02_inferential.ipynb` |
+| GĐ4 | Chốt giao thức mô hình chung (split, metric, baseline) | 02/11–03/11 | Khải Hưng | ✅ `src/protocol.py` |
+| GĐ5 | Modeling song song, 4 thuật toán | 03/11–15/11 | Mỗi người một mô hình | ✅ 5 file trong `reports/predictions/` |
+| GĐ6 | SEM (sau khi học Chap 7) | 16/11–19/11 | Quốc Đạt, Tiến Hưng | ✅ `50_sem.ipynb` |
+| GĐ7 | So sánh mô hình và tổng hợp kết quả | 16/11–18/11 | Khải Hưng | ✅ `60_compare.ipynb` |
 | GĐ8 | Insight và khuyến nghị kinh doanh | 18/11–20/11 | Khải Hưng (cả nhóm góp) | ⏳ |
 | GĐ9 | Viết các deliverable | 26/10–25/11 (Literature Review làm từ sớm) | Xem WBS | ⏳ |
 | GĐ10 | Kiểm tra đạo văn và AI, tập dượt, nộp bài | 24/11–28/11 | Cả nhóm | ⏳ |
@@ -105,7 +105,7 @@ docs/                  tài liệu dự án
 
 ---
 
-## GĐ1. Hiểu và chuẩn bị dữ liệu ⏳ (làm lại từ đầu)
+## GĐ1. Hiểu và chuẩn bị dữ liệu ✅
 
 > Chi tiết đầy đủ ở [Introduction_of_dataset.md](Introduction_of_dataset.md). Mục này mô tả lại **quá trình** đã làm và việc mỗi người cần kiểm tra lại.
 
@@ -175,7 +175,7 @@ python src/clean_dataset.py      # -> cycles_clean.csv, battery_summary.csv
 
 ---
 
-## GĐ2. Thống kê mô tả (Chap 1 §3–4) ⏳
+## GĐ2. Thống kê mô tả (Chap 1 §3–4) ✅
 
 - **Ai:** lead là Minh Vũ. Cả nhóm cùng làm notebook `01_descriptive.ipynb`.
 - **Input:** `cycles_clean.csv`, `battery_summary.csv`, `battery_fade.csv` (chạy `python src/eda_dataset.py` để tạo các hình nền).
@@ -208,7 +208,7 @@ Mạch viết: phát hiện, rồi con số, rồi hàm ý. Ví dụ:
 
 ---
 
-## GĐ3. Thống kê suy diễn (Chap 2) ⏳
+## GĐ3. Thống kê suy diễn (Chap 2) ✅
 
 - **Ai:** lead là Tiến Hưng. Cả nhóm làm notebook `02_inferential.ipynb`.
 - **Input:** `data/processed/battery_fade.csv`, mỗi dòng là **một pin** (23 pin có điều kiện không đổi).
@@ -282,7 +282,7 @@ Bảng số pin theo từng ô (nhiệt độ × dòng xả, chỉ tính CC):
 
 ---
 
-## GĐ4. Giao thức mô hình chung ⏳ (bắt buộc trước khi chia nhau làm)
+## GĐ4. Giao thức mô hình chung ✅
 
 - **Ai:** Khải Hưng (R), cả nhóm thống nhất.
 - **Vì sao:** đề cương yêu cầu "Compare models (accuracy, p-value, RMSEA, R², sensitivity)". Muốn so sánh được thì 4 mô hình phải dùng **cùng dữ liệu, cùng cách chia và cùng metric**.
@@ -309,7 +309,7 @@ Bảng số pin theo từng ô (nhiệt độ × dòng xả, chỉ tính CC):
 | **E2: dự báo nhiều bước / RUL** | Đứng ở mốc 60% chuỗi, dự báo đến hết chuỗi. So sánh chu kỳ dự báo chạm SOH 0,8 với chu kỳ thực tế. Biến ngoại sinh giữ nguyên giá trị đo cuối cùng trước mốc (Rec.md 6.1 #5). | Sai số RUL chỉ tính cho B0007, B0034, B0055; B0047 đã dưới 0,8 trước mốc 60% (Rec.md 6.1 #3) |
 
 ### 4.4 Metric (Chap 3, tr. 81–86)
-- MAE, RMSE, MAPE, R² trên E1.
+- MAE, RMSE, MAPE, R² trên cả E1 và E2 (`protocol.evaluate()`).
 - Sai số RUL (số chu kỳ) trên E2.
 
 ### 4.5 Baseline bắt buộc
@@ -337,7 +337,7 @@ model, battery_id, cycle_valid, scenario (E1|E2), y_true, y_pred, y_lower, y_upp
 
 ---
 
-## GĐ5. Modeling song song ⏳
+## GĐ5. Modeling song song ✅
 
 ### GĐ5a. Quốc Đạt: Hồi quy bội log-linear có tương tác (Chap 3)
 
@@ -345,7 +345,7 @@ model, battery_id, cycle_valid, scenario (E1|E2), y_true, y_pred, y_lower, y_upp
 
 | Bước | Làm thế nào | Vì sao (slide) |
 |---|---|---|
-| 5a.1 Tương quan | Ma trận tương quan của `soh`, `cycle_valid`, `Re_ohm`, `Rct_ohm`, `T_max_C`, `chg_cc_time_s`. **Re và Rct có r = 0,97 trong G1, nhưng chỉ 0,43 trên tier A** (dữ liệu mô hình thực sự dùng; tính bằng pipeline ngày 26/10/2026). Quyết định có đưa cả hai vào hay không phải dựa trên VIF thật của tập train. | Chap 3, tr. 8, tr. 41 (\|r\| > 0,7) |
+| 5a.1 Tương quan | Ma trận tương quan của `soh`, `cycle_valid`, `Re_ohm`, `Rct_ohm`, `T_max_C`, `chg_cc_time_s`. **Re và Rct có r = 0,97 trong G1, nhưng chỉ 0,43 trên tier A** (mọi dòng; tính bằng pipeline ngày 26/10/2026). Chỉ trên 8 pin train thì r = 0,51, và G1 train là 0,95 (`Regression_Report.md`). Report phải ghi rõ dùng tập nào. Quyết định có đưa cả hai vào hay không phải dựa trên VIF thật của tập train. | Chap 3, tr. 8, tr. 41 (\|r\| > 0,7) |
 | 5a.2 Hồi quy đơn | `soh ~ cycle_valid` cho G1. Đọc R², SE, F-test, t-test và CI 95% của hệ số dốc. | tr. 22–30 |
 | 5a.3 Residual plot | Vẽ phần dư theo giá trị dự báo. Nếu thấy hình chữ U hoặc đường cong thì chuyển sang mô hình phi tuyến. | tr. 74, tr. 76 |
 | 5a.4 Log-linear | `ln(soh) ~ cycle_valid`, khi đó hệ số b₁·100 là % SOH thay đổi mỗi chu kỳ. So sánh với polynomial bậc 2 bằng adjusted R². | tr. 67–68, 73–74, 85 |
@@ -376,7 +376,7 @@ print(m.summary())       # R², adj R², F-test, t-test và CI của từng hệ
 |---|---|---|
 | 5b.1 Chọn chuỗi | Chuỗi `soh` theo `cycle_valid` (không dùng `capacity_int_Ah`, xem Rec.md 6.1 #4) của từng pin tier A. Dùng số thứ tự chu kỳ làm trục thời gian, **không dùng ngày**, vì khoảng nghỉ giữa các chu kỳ không đều. | tr. 4 |
 | 5b.2 Vẽ chuỗi | Nhận xét xu hướng giảm, các "răng cưa" sau những lần nghỉ dài, và việc không có tính mùa vụ | tr. 5–6 |
-| 5b.3 Tính dừng | ADF trên chuỗi gốc cho p = 0,53–0,89, tức không dừng. ACF giảm chậm. Lấy **sai phân bậc 1** thì ADF cho p < 0,001. | tr. 11–14, tr. 71 |
+| 5b.3 Tính dừng | ADF trên chuỗi gốc: không dừng ở 10/12 pin tier A (p = 0,11–0,97); B0045 và B0055 cho p < 0,002 do nhiều bước nhảy hồi phục. ACF chuỗi gốc giảm chậm. **Sai phân bậc 1** dừng ở cả 12 pin (p < 0,001). Nhóm chọn d = 1 cho mọi pin (kết quả thật ở `20_arima.ipynb` mục 2). *Sửa ngày 21/11/2026: bản cũ ghi p = 0,53–0,89, không tái lập được.* | tr. 11–14, tr. 71 |
 | 5b.4 Nhận dạng mô hình | Vẽ ACF/PACF của chuỗi sai phân. PACF cắt sau lag p thì gợi ý AR(p); ACF cắt sau lag q thì gợi ý MA(q). Thử p, q ∈ {0, 1, 2}, chọn theo AIC. | tr. 47, 65–67 |
 | 5b.5 Ước lượng | `ARIMA(y_train, order=(p, 1, q)).fit()` | tr. 48 |
 | 5b.6 Chẩn đoán | ACF của phần dư không còn đỉnh nào nổi bật. Kiểm định Ljung-Box (mở rộng ngoài slide). Nếu chưa đạt thì quay lại bước 5b.4. | tr. 49 |
@@ -412,7 +412,7 @@ Làm theo đúng 8 bước SVR ở slide Chap 6, tr. 33:
 | 1. Import | `sklearn.svm.SVR`, `GroupKFold`, `GridSearchCV`, `sklearn.inspection.permutation_importance` |
 | 2. Load dữ liệu | Dùng `load_split()` của GĐ4 |
 | 3. Tạo đặc trưng và scale | Lag SOH từ 1 đến 5, trung bình trượt 5 chu kỳ, `chg_cc_time_s`, `Re_ohm`, `Rct_ohm`, `T_max_C` của chu kỳ trước, `log1p(rest_before_h)`, dummy nhiệt độ, `I_level_A`, cutoff. Dùng `StandardScaler` **đặt trong Pipeline**, để scaler chỉ fit trên phần train của mỗi fold. |
-| 4. Định nghĩa mô hình | SVR kernel RBF. Lưới siêu tham số: C ∈ {0,1; 1; 10; 100}, ε ∈ {0,001; 0,005; 0,01}, gamma ∈ {'scale'; 0,01; 0,1}. Giải thích ý nghĩa của C và ε theo tr. 31. |
+| 4. Định nghĩa mô hình | SVR kernel RBF. Lưới siêu tham số ban đầu: C ∈ {0,1; 1; 10; 100}, ε ∈ {0,001; 0,005; 0,01}, gamma ∈ {'scale'; 0,01; 0,1}. Giải thích ý nghĩa của C và ε theo tr. 31. *Bản thật đã mở rộng lưới (tham số tốt nhất rơi vào biên) và chọn bằng quy tắc một sai số chuẩn; lý do ở `30_ml.ipynb` bước 4.* |
 | 5. Dự báo | Chạy E1 trên tập test. E2 làm bằng dự báo đệ quy: dùng giá trị vừa dự báo làm lag cho bước sau. |
 | 6. Đánh giá | MAE, RMSE, MAPE, R², so với baseline naive |
 | 7. Vẽ train/test | Vẽ giá trị thực và giá trị dự báo cho từng pin test |
@@ -468,7 +468,7 @@ class LSTMReg(nn.Module):
 
 ---
 
-## GĐ6. SEM / Path analysis (Chap 7) ⏳: chỉ bắt đầu sau khi học Chap 7
+## GĐ6. SEM / Path analysis (Chap 7) ✅
 
 - **Ai:** Quốc Đạt (R), Tiến Hưng (hỗ trợ).
 - **Notebook:** `notebooks/50_sem.ipynb`.
@@ -487,7 +487,7 @@ class LSTMReg(nn.Module):
 
 ---
 
-## GĐ7. So sánh mô hình và tổng hợp ⏳
+## GĐ7. So sánh mô hình và tổng hợp ✅
 
 - **Ai:** Khải Hưng (R), cả nhóm.
 - **Notebook:** `notebooks/60_compare.ipynb`. Notebook này đọc toàn bộ `reports/predictions/*.csv`.
@@ -497,9 +497,9 @@ class LSTMReg(nn.Module):
 | Mô hình | MAE | RMSE | MAPE | R² | Sai số RUL (chu kỳ) | Giải thích được? | Khoảng dự báo? | Thời gian train |
 |---|---|---|---|---|---|---|---|---|
 | Naive | | | | | | – | Không | 0 |
-| Hồi quy log-linear | | | | | | Cao | Có | |
-| ARIMA / ARIMAX | | | | | | Trung bình | Có | |
-| SVR | | | | | | Trung bình | Không | |
+| Hồi quy log-linear | | | | | | Cao | Không | |
+| ARIMA / ARIMAX | | | | | | Trung bình | Có (E1 và E2) | |
+| SVR | | | | | | Trung bình | Chỉ E1 (conformal) | |
 | LSTM | | | | | | Thấp | Không | |
 
 **Thêm:**
@@ -507,6 +507,8 @@ class LSTMReg(nn.Module):
 - **Sensitivity của cảnh báo EOL (Chap 4):** từ dự báo của mỗi mô hình, suy ra cảnh báo "pin chạm SOH 0,8 trong 20 chu kỳ tới (có/không)". Tính sensitivity, specificity và confusion matrix cho từng mô hình. Không fit thêm mô hình thứ 5. Đây là phần đáp ứng mục "sensitivity" trong yêu cầu so sánh mô hình của đề cương.
 
 **Kết luận theo từng RQ:** mỗi RQ trả lời bằng 2–3 câu, mỗi câu đều có con số kèm theo.
+
+**Kết quả thật** (bảng số, RUL, cảnh báo EOL và chú thích về cách fit của ARIMA) ở `notebooks/60_compare.ipynb` và `reports/tables/compare_*.csv`. Cột "Khoảng dự báo?" ở bảng trên đã sửa ngày 21/11/2026 theo các file dự báo thật.
 
 ---
 
@@ -517,9 +519,9 @@ class LSTMReg(nn.Module):
 
 | Insight | Bằng chứng (bảng/hình) | Khuyến nghị | Bên liên quan | Mức tin cậy |
 |---|---|---|---|---|
-| Ở 43°C/4 A pin suy giảm nhanh hơn ở 24°C/4 A: khoảng 1,4 lần nếu tính trên 25 chu kỳ đầu, khoảng 3,4 lần nếu tính trên toàn chuỗi | GĐ3 T1, `fig1` | Bảo hành phân tầng theo khí hậu; bắt buộc có hệ thống làm mát cho pack | Hãng xe, đơn vị bảo hành | Trung bình (n = 4 so với 2) |
+| Ở 43°C/4 A pin suy giảm nhanh hơn ở 24°C/4 A trên 25 chu kỳ đầu (27,8 so với 20,1 điểm %/100 chu kỳ), nhưng **chưa có ý nghĩa thống kê** (p = 0,105). Không dùng tỉ số trên toàn chuỗi vì bị thiên lệch: G3 chỉ chạy 39 chu kỳ, B0033/B0034 chạy khoảng 190 chu kỳ | `02_inferential` T1, `fig1` | Làm mát pack, dựa trên cơ chế đã biết hơn là trên dữ liệu này | Hãng xe, đơn vị bảo hành | Thấp (n = 4 so với 2) |
 | Ở 4°C với tải 4 A, pin gần như không xả được (cutoff ≥ 2,5 V) | F3, `fig4` | Sưởi ấm pin trước khi vận hành tải nặng trong trời lạnh; giảm tải khi pin lạnh | Đội xe, drone, người dùng | Cao (hiệu ứng rất lớn) |
-| Thời gian pha CC khi sạc tương quan 0,86 với SOH | F7, mô hình của Minh Vũ | BMS ước lượng SOH ngay khi sạc, không cần xả kiểm tra | Nhà vận hành đội xe | Cao trong G1 |
+| Thời gian pha CC khi sạc tương quan 0,86 với SOH ở G1; nhưng khi đã biết SOH gần đây thì đặc trưng sạc gần như không giúp dự báo chu kỳ kế tiếp | F7, `30_ml` (RQ4) | BMS ước lượng **gần đúng** SOH khi sạc, dùng khi không có phép xả kiểm tra; không thay được lịch sử đo dung lượng | Nhà vận hành đội xe | Trung bình (chỉ G1) |
 | Dung lượng hồi lại tạm thời sau khi nghỉ dài | F5, `fig3` | Không kết luận "pin đã hồi phục" chỉ từ một lần đo sau khi nghỉ; đo lại SOH sau vài chu kỳ | Bộ phận bảo hành, kiểm định pin cũ | Cao |
 | Thời điểm chạm SOH 0,8 dự báo được kèm khoảng tin cậy | GĐ5 E2 | Lập lịch thay pin chủ động; kiểm tra top 10% pin rủi ro trước (lift) | Đội xe | Tùy kết quả mô hình |
 
