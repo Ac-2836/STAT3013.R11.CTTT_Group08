@@ -3,8 +3,6 @@ from collections import Counter
 from itertools import combinations
 import logging
 import warnings
-import json
-import re
 
 import numpy as np
 import pandas as pd
@@ -33,7 +31,6 @@ PRIMARY = ORIGINAL + EXOG_MOMENTS
 AGE_CONTROL = PRIMARY.replace('Re_ohm ~ ambient_C', 'Re_ohm ~ cycle_valid + ambient_C').replace(
                               'Rct_ohm ~ ambient_C', 'Rct_ohm ~ cycle_valid + ambient_C')
 SATURATED = AGE_CONTROL + '\nRe_ohm ~~ Rct_ohm'
-HISTORICAL_ARCHIVE = ROOT/'reports/audit/regression_sem_before/50_sem_HEAD.ipynb'
 
 
 def prepare_sem(cycles, export=True):
@@ -238,36 +235,9 @@ def path_diagram(paths):
     save_table(regressions[['lval','rval','Estimate','Est. Std']], 'sem_diagram_coefficients')
 
 
-def historical_fit(archive_path):
-    """Return only explicitly stored, finite historical indices when available."""
-    columns = ['source', 'DoF', 'chi2', 'CFI', 'TLI', 'RMSEA']
-    try:
-        archived = json.loads(archive_path.read_text(encoding='utf-8'))
-        historical = None
-        for cell in archived['cells']:
-            for output in cell.get('outputs', []):
-                plain = output.get('data', {}).get('text/plain', [])
-                plain = ''.join(plain) if isinstance(plain, list) else plain
-                if all(field in plain for field in ['DoF Baseline', 'RMSEA', 'CFI']):
-                    matches = {key: re.search(r'^'+re.escape(key)+r'\s+([-+0-9.eE]+)', plain, re.M)
-                               for key in columns[1:]}
-                    if not all(matches.values()):
-                        raise ValueError('Incomplete historical fit indices')
-                    historical = {key: float(match.group(1)) for key, match in matches.items()}
-        if historical is None or not np.isfinite(list(historical.values())).all():
-            raise ValueError('Valid archived historical fit output not found')
-        return pd.DataFrame([dict(source='Git HEAD: notebooks/50_sem.ipynb (archived, rounded output)',
-                                  **historical)], columns=columns), 'available'
-    except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
-        status = f'skipped: {type(exc).__name__}: {exc}'
-        print('Historical SEM comparison '+status, flush=True)
-        return pd.DataFrame(columns=columns), status
-
-
-def run_sem(data, archive_path=HISTORICAL_ARCHIVE):
+def run_sem(data):
     rows = []; primary_model = primary_paths = None
-    specs = [('legacy_raw_units_reexecution', ORIGINAL, False, data),
-             ('original_scaled_implicit_exog', ORIGINAL, True, data),
+    specs = [('original_scaled_implicit_exog', ORIGINAL, True, data),
              ('primary_explicit_exog', PRIMARY, True, data),
              ('age_control_sensitivity', AGE_CONTROL, True, data),
              ('age_correlated_residuals_SATURATED', SATURATED, True, data),
@@ -303,7 +273,4 @@ def run_sem(data, archive_path=HISTORICAL_ARCHIVE):
     regressions = primary_paths[primary_paths.op.eq('~')].merge(path_intervals,on=['lval','rval'],validate='one_to_one')
     save_table(regressions, 'sem_primary_paths_with_bootstrap')
     path_diagram(primary_paths)
-    historical, status = historical_fit(archive_path)
-    save_table(historical, 'sem_historical_reported')
-    write_json(TABLES/'sem_historical_status.json', dict(status=status))
     return dict(fit=fit, coefficients=regressions, effects=effect_table, intervals=intervals, bootstrap=bootstrap)
