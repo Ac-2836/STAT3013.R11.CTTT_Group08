@@ -504,7 +504,7 @@ class LSTMReg(nn.Module):
 
 **Thêm:**
 - Sai số tách theo từng pin test (tức theo từng điều kiện vận hành), để biết mô hình nào yếu ở điều kiện nào.
-- **Sensitivity của cảnh báo EOL (Chap 4):** từ dự báo của mỗi mô hình, suy ra cảnh báo "pin chạm SOH 0,8 trong 20 chu kỳ tới (có/không)". Tính sensitivity, specificity và confusion matrix cho từng mô hình. Không fit thêm mô hình thứ 5. Đây là phần đáp ứng mục "sensitivity" trong yêu cầu so sánh mô hình của đề cương.
+- **Sensitivity của cảnh báo EOL (Chap 4):** từ dự báo của mỗi mô hình, suy ra cảnh báo "pin chạm SOH 0,8 trong 20 chu kỳ tới (có/không)". Tính sensitivity, specificity và confusion matrix cho từng mô hình. Không fit thêm mô hình thứ 5. Đây là phần đáp ứng mục "sensitivity" trong yêu cầu so sánh mô hình của đề cương. *Thay đổi ngày 21/11/2026: có thêm mô hình thứ 5 (Rec.md mục 8).*
 
 **Kết luận theo từng RQ:** mỗi RQ trả lời bằng 2–3 câu, mỗi câu đều có con số kèm theo.
 
