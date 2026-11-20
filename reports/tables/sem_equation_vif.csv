@@ -8,9 +8,9 @@ Rct_ohm,ambient_C,1.539326465658934
 Rct_ohm,I_level_A,1.8158413848683566
 Rct_ohm,discharge_cutoff_V,1.2772898423762018
 ln_soh,Intercept,1.0
-ln_soh,Re_ohm,3.7271750580282528
-ln_soh,Rct_ohm,6.13976516038092
-ln_soh,ambient_C,5.809188496638234
+ln_soh,Re_ohm,3.7271750580282514
+ln_soh,Rct_ohm,6.139765160380924
+ln_soh,ambient_C,5.809188496638238
 ln_soh,I_level_A,3.972787131013785
-ln_soh,discharge_cutoff_V,1.5087555793775131
+ln_soh,discharge_cutoff_V,1.508755579377513
 ln_soh,cycle_valid,1.2965375827595944
