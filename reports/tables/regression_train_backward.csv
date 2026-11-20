@@ -1,0 +1,2 @@
+step,formula,covariance,adjusted_R2,AIC,BIC,eligible_p_values,removed,removed_p
+0,ln_soh ~ cycle_c + C(ambient_C) + current_c + cutoff_c + cycle_c:C(ambient_C) + cycle_c:current_c + cycle_c:cutoff_c,cluster,0.90297843895092,-3580.385888167756,-3541.5594954222674,"{""cycle_c:C(ambient_C)"": 0.002090519722186027, ""cycle_c:current_c"": 0.0008988082359386017, ""cycle_c:cutoff_c"": 0.01122956697193844}",none,
