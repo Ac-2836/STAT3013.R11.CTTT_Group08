@@ -1,0 +1,8 @@
+stage,n
+Tier A/B cycle rows,2020
+Distinct linked EIS operations,812
+Raw EIS invalid or missing,0
+Analysis complete cases,812
+Independent battery blocks,22
+Cleaned/raw resistance mismatches replaced,0
+Flagged rows retained in historical/theory sample,14

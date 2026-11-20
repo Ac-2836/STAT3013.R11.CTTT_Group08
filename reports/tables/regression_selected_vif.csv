@@ -1,0 +1,9 @@
+term,VIF
+Intercept,1.0
+C(ambient_C)[T.24.0],2.5808648832855003
+cycle_c,14.049649034751619
+cycle_c:C(ambient_C)[T.24.0],13.90597234622813
+current_c,3.832718619828862
+cutoff_c,2.8722157571079854
+cycle_c:current_c,6.052957905641333
+cycle_c:cutoff_c,4.743579061003427

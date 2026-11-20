@@ -6,3 +6,6 @@ data/*
 data/raw/*
 !data/raw/.gitkeep
 !data/raw/README.md
+
+# Local Python bytecode generated when running the regression/SEM notebooks.
+__pycache__/

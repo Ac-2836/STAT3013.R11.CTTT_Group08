@@ -1,0 +1,8 @@
+{
+  "seed": 42,
+  "target_valid": 200,
+  "valid": 200,
+  "attempts": 200,
+  "failures": 0,
+  "failure_reasons": {}
+}
