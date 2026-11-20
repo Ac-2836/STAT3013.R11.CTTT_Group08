@@ -211,7 +211,6 @@ def fit_forecasters(train):
 VARIANTS = ['research_loglinear', 'selected_loglinear', 'quadratic_loglinear',
             'anchored_loglinear', 'anchored_quadratic']
 OPERATING_CONDITIONS = ['ambient_C', 'I_level_A', 'discharge_cutoff_V']
-HISTORICAL_ARCHIVE = ROOT/'reports/audit/regression_sem_before/regression.csv'
 
 
 def operating_condition_check(data):
@@ -267,22 +266,7 @@ def forecast(bundle, evaluation):
     return pd.concat(parts, ignore_index=True)
 
 
-def historical_predictions(data, archive_path):
-    """Optional validated comparison; never an input to fitting or selection."""
-    try:
-        before = pd.read_csv(archive_path)
-        validate_predictions(before, data)
-        if before.model.nunique() != 1:
-            raise ValueError('Historical archive must contain one model')
-        before['model'] = 'preaudit_working_copy'
-        return before, 'available'
-    except (OSError, ValueError, KeyError, TypeError, AttributeError, AssertionError) as exc:
-        status = f'skipped: {type(exc).__name__}: {exc}'
-        print('Historical regression comparison '+status, flush=True)
-        return None, status
-
-
-def evaluate_regression(data, archive_path=HISTORICAL_ARCHIVE):
+def evaluate_regression(data):
     # Audit the entire Tier A series, including rows excluded from estimation.
     cycles = load_cycles()
     save_table(operating_condition_check(cycles[cycles.tier.eq('A')]),
@@ -356,9 +340,4 @@ def evaluate_regression(data, archive_path=HISTORICAL_ARCHIVE):
             range_rows.append(dict(battery_id=bid, feature=col, train_min=train[col].min(), train_max=train[col].max(),
                 test_min=g[col].min(), test_max=g[col].max(), outside_global_train=int((~g[col].between(train[col].min(),train[col].max())).sum())))
     save_table(pd.DataFrame(range_rows), 'regression_extrapolation')
-    # Comparison happens only after all current results have been generated.
-    before, status = historical_predictions(data, archive_path)
-    save_table(metric_table(before) if before is not None else results.iloc[:0],
-               'regression_historical_metrics')
-    write_json(TABLES/'regression_historical_status.json', dict(status=status))
     return dict(winners=winners, cv=scores, test_metrics=results, eol=eol)
