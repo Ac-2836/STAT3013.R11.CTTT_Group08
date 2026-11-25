@@ -1,13 +1,22 @@
 # Lithium-Ion Battery Degradation and SOH Prognostics under Variable Operating Conditions
 
-**Course project, STAT3013 (Intermediate Statistical Analysis), class STAT3013.R11.CTTT, Group 08 (4AnhTai)**
+**Course project, STAT3013 (Intermediate Statistical Analysis), class STAT3013.R11, Group 08**
 *Statistical and Machine Learning-Based Modeling of Lithium-Ion Battery Degradation and State-of-Health Prognostics under Variable Operating Conditions*
+
+| Quick links | |
+|---|---|
+| Dataset (official source) | [NASA PCoE Data Set Repository](https://www.nasa.gov/intelligent-systems-division/discovery-and-systems-health/pcoe/pcoe-data-set-repository/), item "5. Batteries" |
+| Dataset (copy used by the team) | [Google Drive folder](https://drive.google.com/drive/folders/1w9p1saNKsAFjhIGZ5JKSlOro6wuLO4OP?usp=sharing) |
+| Demo video | [Google Drive folder](https://drive.google.com/drive/folders/1NwKpjaJoPPeKOlv4jjJBqJgfSxeC-K7M?usp=sharing) |
+| Environment | Python 3.10 or 3.11, NumPy 2.0 or newer (Section 7.1) |
+| How to run | Section 7.2 |
+| License | MIT (Section 11, [`LICENSE`](LICENSE)) |
 
 ## 1. Project overview
 
 Battery lifetime is a central business problem for electric-vehicle (EV) and drone fleets and for warranty providers: a pack that degrades faster than expected costs money, and a pack replaced too early wastes it. This project studies how the **capacity of lithium-ion cells fades** and which **operating conditions drive that fade** (ambient temperature, discharge current, discharge depth, rest time, internal resistance), then **predicts State of Health (SOH)** and the point where a cell reaches end of life. The modeling results are turned into practical recommendations for companies (warranty policy, fleet maintenance) and for users (safe operating habits).
 
-SOH is defined as `SOH = C / C0`, the current discharge capacity divided by the cell's own capacity when new. End of life (EOL) is taken at SOH = 0.8 (20% capacity loss).
+SOH is defined as `SOH = C / C0`, the current discharge capacity divided by the cell's own capacity when new. End of life (EOL) is the first cycle at which SOH falls below 0.8 (more than 20% capacity loss).
 
 ### Research questions
 
@@ -19,15 +28,27 @@ SOH is defined as `SOH = C / C0`, the current discharge capacity divided by the 
 | RQ4 | How well do charge and impedance features predict the next-cycle SOH? | SVR |
 | RQ5 | Does a sequence model beat classical ML on this small dataset? | LSTM |
 | RQ6 | Do operating conditions act on SOH through internal resistance? | SEM / path analysis |
-| RQ7 | Does a model that combines the population degradation curve, the cell's own history and its latest observation forecast end of life better, and support replacement decisions? | Hybrid Bayesian degradation curve (fifth model, added 21/11/2026) |
+| RQ7 | Does a model that combines the population degradation curve, the cell's own history and its latest observation forecast end of life better, and support replacement decisions? | Hybrid Bayesian degradation curve (fifth model) |
 
-## 2. Expected outputs
+### Main results
+
+Scored on four held-out test cells (213 rows per scenario); full tables are in `reports/tables/`.
+
+| Finding | Result |
+|---|---|
+| One step ahead (E1) | Every model beats naive; LSTM and ARIMAX are best (MAE 0.0098 against 0.0119 for naive). |
+| Many steps ahead (E2) | Only the hybrid model is below naive (MAE 0.0226 against 0.0249); not significant on the four test cells (Diebold–Mariano p = 0.59), significant in a 12-cell supporting check (0.0184 against 0.0323, p < 0.001). |
+| EOL alarm (within 20 cycles) | Hybrid: sensitivity 0.89, specificity 0.55, the highest specificity among the models with sensitivity 0.89. |
+| Operating conditions | At 4 °C, cells discharged at 1 A fade faster than at 2 A (20.0 percentage points per 100 cycles over the whole series, p = 0.0008, Holm 0.012). |
+| Path analysis (SEM) | The data do not support an effect of operating conditions on SOH through internal resistance. |
+
+## 2. Deliverables
 
 - **Full report** (about 30 pages) and **IEEE conference paper** (7 to 10 pages).
-- **Presentation slides** and a **demo video**, plus a small **Streamlit app** (low priority, built after the core work).
+- **Presentation slides** and a **15-minute narrated demo video** (link in Quick links).
 - **This repository**: reproducible pipeline from raw files to figures and model predictions.
-- **Plagiarism (Turnitin <= 10%) and AI-content check evidence.**
-- Findings and a model comparison table, translated into recommendations for warranty design, fleet management and users.
+- **Plagiarism (Turnitin <= 10%) and AI-content check evidence**, with an AI usage statement.
+- Files follow the course naming pattern `STAT3013.R11.Group08_BatterySOH_<Artifact>_v<MAJOR.MINOR>_<YYYYMMDD>.<ext>`.
 
 ## 3. Dataset
 
@@ -38,11 +59,11 @@ SOH is defined as `SOH = C / C0`, the current discharge capacity divided by the 
 | Cells | 34 commercial 18650 cells, rated 2.0 Ah, in 9 experiment groups (G1 to G9) |
 | Period | April 2008 to September 2010 |
 | Raw size | 2,815 charge, 2,794 discharge and 1,956 impedance (EIS) operations, about 7.3 million measurements |
-| Conditions | Ambient 4, 22 to 24 and 43 to 44 C; discharge current 1, 2 and 4 A; constant-current and square-wave loads; cutoff voltage 2.0 to 2.7 V |
+| Conditions | Ambient 4 °C, 22 to 24 °C and 43 to 44 °C; discharge current 1, 2 and 4 A; constant-current and square-wave loads; cutoff voltage 2.0 to 2.7 V |
 | Target | Discharge capacity of every cycle, so SOH is measured directly |
 | After cleaning | 2,658 valid discharge cycles from 30 cells (4 cells excluded as corrupted) |
 
-Raw files are not stored in git. Download them from the [project Google Drive](https://drive.google.com/drive/folders/1w9p1saNKsAFjhIGZ5JKSlOro6wuLO4OP?usp=sharing) into `data/raw/`. The full dataset description, data quality findings and cleaning rules are in [`docs/Introduction_of_dataset.md`](docs/Introduction_of_dataset.md).
+Raw files are not stored in git. The official source is the [NASA PCoE Data Set Repository](https://www.nasa.gov/intelligent-systems-division/discovery-and-systems-health/pcoe/pcoe-data-set-repository/) (item "5. Batteries"); the exact copy used by the team is on the [project Google Drive](https://drive.google.com/drive/folders/1w9p1saNKsAFjhIGZ5JKSlOro6wuLO4OP?usp=sharing). Put the files into `data/raw/`. The full dataset description, data quality findings and cleaning rules are in [`docs/Introduction_of_dataset.md`](docs/Introduction_of_dataset.md).
 
 ## 4. Research methodology
 
@@ -59,7 +80,7 @@ The workflow follows the four analytics levels taught in the course:
    | Traditional statistics | ARIMA / ARIMAX | Tien Hung |
    | Machine Learning | SVR (Support Vector Regression) | Minh Vu |
    | Deep Learning | LSTM | Khai Hung |
-   | Hybrid (added after the four models) | Hierarchical Bayesian degradation curve anchored to the latest observation | Khai Hung |
+   | Hybrid (added after the four models) | Hybrid Bayesian degradation curve anchored to the latest observations | Khai Hung |
 
 4. **Structural**: SEM / path analysis, operating conditions -> impedance (Re, Rct) -> SOH.
 5. **Prescriptive**: recommendations for warranty, fleet maintenance and users.
@@ -80,6 +101,7 @@ The workflow follows the four analytics levels taught in the course:
 ```
 .
 ├── README.md
+├── LICENSE                             # MIT License
 ├── requirements.txt                    # all Python dependencies
 ├── requirements-regression-sem.lock.txt # exact versions used for regression and SEM
 ├── .gitignore
@@ -114,6 +136,7 @@ The workflow follows the four analytics levels taught in the course:
 | Path | What it is |
 |---|---|
 | `README.md` | This file: project summary and structure. |
+| `LICENSE` | MIT License for the code. |
 | `requirements.txt` | Python dependencies (`pip install -r requirements.txt`). |
 | `.gitignore` | Excludes the raw data in `data/raw/` (only its README is kept); processed tables are tracked. |
 | `data/` | Data folder. `data/raw/` is **git-ignored** and never committed; `data/processed/` **is committed**. |
@@ -128,7 +151,7 @@ The workflow follows the four analytics levels taught in the course:
 | `src/descriptive_stats.py`, `src/iforest_check.py` | Descriptive statistics; Isolation Forest cross-check of the outlier flags. |
 | `src/regression_analysis.py`, `src/sem_analysis.py`, `src/regression_sem_utils.py`, `src/run_regression_sem.py` | Log-linear regression and SEM; `run_regression_sem.py` executes both notebooks. |
 | `src/svr_model.py`, `src/lstm_model.py` | SVR and LSTM models. |
-| `src/hybrid_model.py` | Fifth model: hierarchical Bayesian degradation curve, EOL probability and replacement-cost analysis (design in `docs/Rec.md` section 8). |
+| `src/hybrid_model.py` | Fifth model: hybrid Bayesian degradation curve, EOL probability and replacement-cost analysis (design in `docs/Rec.md` section 8). |
 | `src/compare_models.py` | Scores every prediction file, RUL errors and the EOL-alarm sensitivity/specificity. |
 | `tests/` | Automated checks for regression and SEM (`python -m unittest discover -s tests`). |
 | `reports/tables/` | CSV tables produced by the notebooks and scripts. |
@@ -159,7 +182,20 @@ The workflow follows the four analytics levels taught in the course:
 | `battery_summary.csv` | One cell | Conditions, C0, final SOH, usage tier |
 | `battery_fade.csv` | One cell (23 cells with constant conditions) | Unit of observation for inferential tests |
 
-## 7. How to reproduce
+## 7. Environment and how to reproduce
+
+### 7.1 Environment requirements
+
+| Item | Requirement |
+|---|---|
+| Python | 3.10 or 3.11 (the notebooks were run on 3.10.12 and 3.11.9) |
+| Packages | `requirements.txt`: NumPy, pandas, SciPy, Matplotlib, statsmodels, scikit-learn, PyTorch, semopy, Jupyter |
+| NumPy | 2.0 or newer (`src/build_dataset.py` uses `np.trapezoid`, which older versions do not have) |
+| Exact versions | `requirements-regression-sem.lock.txt` pins the versions used for the regression and SEM runs (for example NumPy 2.4.6, pandas 3.1.1, scikit-learn 1.9.1, statsmodels 0.15.0, semopy 2.3.11); install it with `pip install -r requirements-regression-sem.lock.txt` to reproduce those results exactly |
+| Hardware | A normal laptop; the LSTM has 5,537 parameters and runs on the CPU, no GPU is needed |
+| Data | Raw `.mat` files in `data/raw/` only to rebuild `data/processed/`; every later step reads the committed tables |
+
+### 7.2 Steps
 
 ```bash
 pip install -r requirements.txt
@@ -330,3 +366,7 @@ These rules are **mandatory** for every member. They keep the history readable, 
 - Commit directly to `main`, or push to another member's branch.
 - Rewrite shared history (`git push --force`, `git commit --amend` on pushed commits) without the leader's agreement.
 - Commit numbers, tables or figures that were typed by hand instead of produced by committed code.
+
+## 11. License
+
+The code in this repository is released under the [MIT License](LICENSE). The NASA PCoE battery data are not part of this license; they belong to NASA and are cited as B. Saha and K. Goebel, "Battery Data Set", NASA Prognostics Data Repository, 2007.
